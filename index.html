@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analog Clock</title>
+    <style>
+        /* ============================= */
+        /* CSS STYLING */
+        /* ============================= */
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .clock {
+            width: 350px;
+            height: 350px;
+            border: 10px solid #333;
+            border-radius: 50%;
+            position: relative; /* Crucial for positioning the hands */
+            background: #fff;
+        }
+
+        .hand {
+            position: absolute;
+            transform-origin: bottom center; /* Rotation starts from the center/bottom of the element */
+            z-index: 10; /* Ensure hands are above background lines */
+            border-radius: 5px;
+            /* Initial rotation needs to be calculated, but we use JS for that. */
+        }
+
+        /* The Hour Hand (Short and thick) */
+        #hour-hand {
+            width: 6%;
+            height: 80px; /* Length */
+            background-color: #333;
+            margin-top: -12px; /* Compensate for border-radius calculation */
+            z-index: 20;
+        }
+
+        /* The Minute Hand (Medium length) */
+        #minute-hand {
+            width: 4%;
+            height: 140px; /* Length */
+            background-color: #333;
+            margin-top: -8px;
+            z-index: 25;
+        }
+
+        /* The Second Hand (Thin and distinct) */
+        #second-hand {
+            width: 2px;
+            height: 160px; /* Length */
+            background-color: red;
+            margin-top: -4px;
+            z-index: 30;
+        }
+
+        /* Center Pivot (for visual effect) */
+        .clock::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background-color: #333;
+            border-radius: 50%;
+            z-index: 40;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="clock">
+        <!-- The hands will be controlled by JavaScript -->
+        <div id="hour-hand" class="hand"></div>
+        <div id="minute-hand" class="hand"></div>
+        <div id="second-hand" class="hand"></div>
+    </div>
+
+    <script>
+        /* ============================= */
+        /* JAVASCRIPT LOGIC */
+        /* ============================= */
+
+        const hourHand = document.getElementById('hour-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const secondHand = document.getElementById('second-hand');
+
+        function updateClock() {
+            // 1. Get the current local time
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+
+            // Format time (optional, but good practice)
+            hours %= 12; // Use 12-hour format for the clock face display logic
+            minutes %= 60;
+            seconds %= 60;
+
+            /* 2. Calculate Degrees */
+
+            // A full circle is 360 degrees. We must account for smooth movement
+            // (e.g., minutes hand position depends on seconds passing).
+
+            // Seconds: Moves 360 degrees in 60 seconds (6 deg/sec)
+            let secondDegrees = (seconds * 6);
+
+            // Minutes: Moves 360 degrees in 60 minutes (6 deg/min). Add bonus from seconds.
+            let minuteDegrees = ((minutes * 6) + (seconds * 0.1));
+
+            // Hours: Moves 360 degrees in 12 hours (30 deg/hour).
+            // Adds bonus from minutes and seconds to keep it accurate.
+            let hourDegrees = ((hours * 30) + (minutes * 0.5) + (seconds * 0.0083));
+
+
+            /* 3. Apply Rotation using CSS Transform */
+
+            // NOTE: JavaScript's Math.round is used here to limit floating point errors when setting the style
+            secondHand.style.transform = `rotate(${Math.round(secondDegrees)}deg)`;
+            minuteHand.style.transform = `rotate(${Math.round(minuteDegrees)}deg)`;
+            hourHand.style.transform = `rotate(${Math.round(hourDegrees)}deg)`;
+        }
+
+        // Initial call to set the clock immediately, then update every 50ms for smooth animation
+        updateClock();
+        setInterval(updateClock, 50);
+    </script>
+</body>
+</html>
