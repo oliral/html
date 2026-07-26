@@ -1,143 +1,156 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analog Clock</title>
-    <style>
-        /* ============================= */
-        /* CSS STYLING (UPDATED) */
-        /* ============================= */
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analoge klok</title>
+  <style>
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      background:#f6f6f6;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-            font-family: Arial, sans-serif;
-        }
+    .clock-wrap{
+      width: min(420px, 80vw);
+      aspect-ratio: 1 / 1;
+      display:grid;
+      place-items:center;
+    }
 
-        .clock {
-            width: 350px;
-            height: 350px;
-            border: 10px solid #333;
-            border-radius: 50%;
-            position: relative; /* Crucial for positioning the hands */
-            background: #fff;
-        }
+    .clock{
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      border: 10px solid #222;
+      overflow: hidden;
+    }
 
-        .hand {
-            /* CRITICAL FIXES START HERE */
-            position: absolute;
-            /* Setting top/left to 50% and transforming back by half its own size centers it perfectly. */
-            top: 50%;
-            left: 50%;
-            transform-origin: center center; /* Set rotation origin to the element's defined center */
-            margin-top: -1px; /* Adjust for border effects */
+    /* optionele wijzerplaat */
+    .ticks{
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      background:
+        radial-gradient(circle at center, transparent 58%, rgba(0,0,0,.06) 59%, transparent 60%),
+        conic-gradient(from -90deg,
+          rgba(0,0,0,.22) 0deg 1deg,
+          transparent 1deg 6deg,
+          rgba(0,0,0,.22) 6deg 7deg,
+          transparent 7deg 30deg
+        );
+      mask: radial-gradient(circle at center, transparent 0 55%, #000 56% 100%);
+      pointer-events:none;
+    }
 
-            /* This combination ensures the rotational point is exactly in the middle of .clock */
-        }
+    /* wijzers (belangrijk: draaipunt exact op midden) */
+    .hand{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform-origin: 50% 100%; /* onderkant = draaipunt */
+      z-index: 2;
+    }
 
+    /* basis plaatsen met translate(-50%, -100%) */
+    #hour-hand{
+      width: 8%;
+      height: 70px;
+      background: #333;
+      border-radius: 6px;
+      transform: translate(-50%, -100%) rotate(0deg);
+    }
 
-        /* The Hour Hand (Short and thick) */
-        #hour-hand {
-            width: 8%; /* Slightly wider to look balanced */
-            height: 70px; /* Length - shortened slightly for visual balance */
-            background-color: #333;
-            transform: translate(-50%, 0); /* Adjusting offset after positioning logic is complex, simple translation of origin helps */
-            /* We rely on the general hand styling + absolute positioning to handle centering. */
-        }
+    #minute-hand{
+      width: 4%;
+      height: 130px;
+      background: #333;
+      border-radius: 6px;
+      transform: translate(-50%, -100%) rotate(0deg);
+    }
 
-        /* The Minute Hand (Medium length) */
-        #minute-hand {
-            width: 4%;
-            height: 130px; /* Length */
-            background-color: #333;
-             transform: translate(-50%, 0);
-        }
+    #second-hand{
+      width: 2px;
+      height: 160px;
+      background: #e60000;
+      border-radius: 2px;
+      transform: translate(-50%, -100%) rotate(0deg);
+      z-index: 3;
+    }
 
-        /* The Second Hand (Thin and distinct) */
-        #second-hand {
-            width: 2px;
-            height: 160px; /* Length */
-            background-color: red;
-            transform: translate(-50%, 0);
-        }
+    /* middelpunt */
+    .hub{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width: 18px;
+      height: 18px;
+      background:#111;
+      border-radius:50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      box-shadow: inset 0 0 0 3px #fff;
+    }
 
-
-        /* Center Pivot remains the same - it's correct for a visual overlay */
-        .clock::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 12px;
-            height: 12px;
-            background-color: #333;
-            border-radius: 50%;
-            z-index: 40;
-        }
-
-    </style>
+    /* optioneel: subtiele gradenverdeling / look */
+    .center-glow{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width: 140px;
+      height: 140px;
+      transform: translate(-50%, -50%);
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(0,0,0,.06), transparent 60%);
+      pointer-events:none;
+    }
+  </style>
 </head>
-<body >
+<body>
+  <div class="clock-wrap">
+    <div class="clock" aria-label="Analoge klok">
+      <div class="ticks"></div>
+      <div class="center-glow"></div>
 
-    <div class="clock">
-        <!-- Note on the Hand Styling Trick: -->
-        <!-- Because we are using `position: absolute` and want rotation to happen at 50%,
-             we define the hand's dimensions (height/width) and then use 'translate(-50%, 0)'
-             in CSS for a visual offset, but JS must still rotate relative to the central pivot. -->
-        <div id="hour-hand" class="hand"></div>
-        <div id="minute-hand" class="hand"></div>
-        <div id="second-hand" class="hand"></div>
-    </div >
+      <!-- wijzers -->
+      <div id="hour-hand" class="hand"></div>
+      <div id="minute-hand" class="hand"></div>
+      <div id="second-hand" class="hand"></div>
 
-    <script>
-        /* ============================= */
-        /* JAVASCRIPT LOGIC (NO CHANGES NEEDED) */
-        /* ============================= */
+      <div class="hub"></div>
+    </div>
+  </div>
 
-        const hourHand = document.getElementById('hour-hand');
-        const minuteHand = document.getElementById('minute-hand');
-        const secondHand = document.getElementById('second-hand');
+  <script>
+    const hourHand = document.getElementById('hour-hand');
+    const minuteHand = document.getElementById('minute-hand');
+    const secondHand = document.getElementById('second-hand');
 
-        function updateClock() {
-            // Get the current local time
-            const now = new Date();
-            let hours = now.getHours();
-            let minutes = now.getMinutes();
-            let seconds = now.getSeconds();
+    function updateClock(){
+      const now = new Date();
 
-            // Normalize to 12-hour format
-            hours %= 12;
-            minutes %= 60;
-            seconds %= 60;
+      const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+      const minutes = now.getMinutes() + seconds / 60;
+      const hours = (now.getHours() % 12) + minutes / 60;
 
-            /* Calculate Degrees */
+      const secondDegrees = (seconds / 60) * 360;
+      const minuteDegrees = (minutes / 60) * 360;
+      const hourDegrees = (hours / 12) * 360;
 
-            // Second Hand: 360 degrees in 60 seconds (6 deg/sec)
-            let secondDegrees = (seconds * 6);
+      // translate(-50%, -100%) zorgt dat de basis exact op het midden ligt.
+      secondHand.style.transform  = `translate(-50%, -100%) rotate(${secondDegrees}deg)`;
+      minuteHand.style.transform  = `translate(-50%, -100%) rotate(${minuteDegrees}deg)`;
+      hourHand.style.transform    = `translate(-50%, -100%) rotate(${hourDegrees}deg)`;
+    }
 
-            // Minute Hand: 360 degrees in 60 minutes. Added bonus from seconds.
-            let minuteDegrees = ((minutes * 6) + (seconds * 0.1));
-
-            // Hour Hand: 360 degrees in 12 hours. Bonus from minutes and seconds.
-            let hourDegrees = ((hours * 30) + (minutes * 0.5) + (seconds * 0.0083));
-
-
-            /* Apply Rotation */
-
-            secondHand.style.transform = `rotate(${Math.round(secondDegrees)}deg)`;
-            minuteHand.style.transform = `rotate(${Math.round(minuteDegrees)}deg)`;
-            hourHand.style.transform = `rotate(${Math.round(hourDegrees)}deg)`;
-        }
-
-        // Initial call and continuous update (50ms for smoothness)
-        updateClock();
-        setInterval(updateClock, 50);
-    </script>
+    updateClock();
+    setInterval(updateClock, 16); // ~60fps
+  </script>
 </body>
 </html>
