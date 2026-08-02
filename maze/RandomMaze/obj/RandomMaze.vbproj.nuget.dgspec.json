@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj": {}
+    "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj": {}
   },
   "projects": {
-    "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj": {
+    "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj",
+        "projectUniqueName": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj",
         "projectName": "RandomMaze",
-        "projectPath": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj",
+        "projectPath": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj",
         "packagesPath": "C:\\Users\\desco\\.nuget\\packages\\",
         "outputPath": "C:\\Dell\\html\\maze\\RandomMaze\\obj\\",
         "projectStyle": "PackageReference",

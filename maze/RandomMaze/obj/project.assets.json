@@ -13,9 +13,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj",
+      "projectUniqueName": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj",
       "projectName": "RandomMaze",
-      "projectPath": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.csproj",
+      "projectPath": "C:\\Dell\\html\\maze\\RandomMaze\\RandomMaze.vbproj",
       "packagesPath": "C:\\Users\\desco\\.nuget\\packages\\",
       "outputPath": "C:\\Dell\\html\\maze\\RandomMaze\\obj\\",
       "projectStyle": "PackageReference",
