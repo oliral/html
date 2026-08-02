@@ -15,7 +15,7 @@ Imports System.Reflection
 <Assembly: System.Reflection.AssemblyCompanyAttribute("RandomMaze"),  _
  Assembly: System.Reflection.AssemblyConfigurationAttribute("Debug"),  _
  Assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0"),  _
- Assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e544d8c515d08f4f7378fd71836aa7a2060540dd"),  _
+ Assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8b418519803997a3548d3c5735a93958edf118d4"),  _
  Assembly: System.Reflection.AssemblyProductAttribute("RandomMaze"),  _
  Assembly: System.Reflection.AssemblyTitleAttribute("RandomMaze"),  _
  Assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0"),  _

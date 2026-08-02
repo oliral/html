@@ -1,5 +1,15 @@
+C:\Dell\html\maze\RandomMaze\bin\Debug\net10.0-windows\RandomMaze.exe
+C:\Dell\html\maze\RandomMaze\bin\Debug\net10.0-windows\RandomMaze.deps.json
+C:\Dell\html\maze\RandomMaze\bin\Debug\net10.0-windows\RandomMaze.runtimeconfig.json
+C:\Dell\html\maze\RandomMaze\bin\Debug\net10.0-windows\RandomMaze.dll
+C:\Dell\html\maze\RandomMaze\bin\Debug\net10.0-windows\RandomMaze.pdb
 C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.GeneratedMSBuildEditorConfig.editorconfig
 C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.AssemblyInfoInputs.cache
 C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.AssemblyInfo.vb
 C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.vbproj.CoreCompileInputs.cache
 C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.sourcelink.json
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.dll
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\refint\RandomMaze.dll
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.pdb
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.genruntimeconfig.cache
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\ref\RandomMaze.dll

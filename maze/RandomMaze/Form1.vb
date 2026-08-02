@@ -21,21 +21,17 @@ Public Class Form1
     Private Structure Cell
         Public Walls As Boolean() ' 0..3
         Public Visited As Boolean
-        Public Sub New()
-            Walls = New Boolean(3) {}
-            Visited = False
-        End Sub
+
+        Public Shared Function Create() As Cell
+            Dim c As New Cell()
+            c.Walls = New Boolean(3) {}
+            For i = 0 To 3
+                c.Walls(i) = True
+            Next
+            c.Visited = False
+            Return c
+        End Function
     End Structure
-
-    ' Matches what WinForms designer expects (fixes CS0115)
-    Protected Overrides Sub Dispose(disposing As Boolean)
-        If disposing Then
-            If components IsNot Nothing Then components.Dispose()
-        End If
-        MyBase.Dispose(disposing)
-    End Sub
-
-    Private components As System.ComponentModel.IContainer
 
     Public Sub New()
         Me.Text = "Random Maze"
@@ -56,10 +52,7 @@ Public Class Form1
 
         For y = 0 To cellCountY - 1
             For x = 0 To cellCountX - 1
-                maze(x, y) = New Cell()
-                For i = 0 To 3
-                    maze(x, y).Walls(i) = True
-                Next
+                maze(x, y) = Cell.Create()
             Next
         Next
 
@@ -90,12 +83,13 @@ Public Class Form1
             If neighbors.Count = 0 Then
                 stack.Pop()
             Else
-                Dim chosen = neighbors(rnd.Next(neighbors.Count)]
+                Dim chosen = neighbors(rnd.Next(neighbors.Count)) ' <-- correct parenthesis
                 Dim nx = chosen.nx
                 Dim ny = chosen.ny
                 Dim dir = chosen.dir
 
                 RemoveWall(cx, cy, dir)
+
                 maze(nx, ny).Visited = True
                 stack.Push((nx, ny))
             End If
