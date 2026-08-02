@@ -1,0 +1,4 @@
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.GeneratedMSBuildEditorConfig.editorconfig
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.AssemblyInfoInputs.cache
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.AssemblyInfo.cs
+C:\Dell\html\maze\RandomMaze\obj\Debug\net10.0-windows\RandomMaze.csproj.CoreCompileInputs.cache
