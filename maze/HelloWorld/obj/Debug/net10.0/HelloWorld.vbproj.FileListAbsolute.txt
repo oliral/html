@@ -1,0 +1,15 @@
+C:\Dell\html\maze\HelloWorld\bin\Debug\net10.0\HelloWorld.exe
+C:\Dell\html\maze\HelloWorld\bin\Debug\net10.0\HelloWorld.deps.json
+C:\Dell\html\maze\HelloWorld\bin\Debug\net10.0\HelloWorld.runtimeconfig.json
+C:\Dell\html\maze\HelloWorld\bin\Debug\net10.0\HelloWorld.dll
+C:\Dell\html\maze\HelloWorld\bin\Debug\net10.0\HelloWorld.pdb
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.GeneratedMSBuildEditorConfig.editorconfig
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.AssemblyInfoInputs.cache
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.AssemblyInfo.vb
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.vbproj.CoreCompileInputs.cache
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.sourcelink.json
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.dll
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\refint\HelloWorld.dll
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.pdb
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\HelloWorld.genruntimeconfig.cache
+C:\Dell\html\maze\HelloWorld\obj\Debug\net10.0\ref\HelloWorld.dll
