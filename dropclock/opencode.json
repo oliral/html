@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "ollama/qwen3:8b-16k",
+  "model": "ollama/qwen3:8b",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -9,8 +9,9 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen3:8b-16k": {
+        "qwen3:8b": {
           "name": "Qwen 3 8B",
+          "tool_call": true,
           "limit": {
             "context": 16384,
             "output": 4096

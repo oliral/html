@@ -1,0 +1,2 @@
+
+make a single page html5 file called clock.html which displays the current time in digital format in large characters. add animation to the clock that each minute the 4 digits fall into water in slowmotion causing the water to splash in slowmotion too 
