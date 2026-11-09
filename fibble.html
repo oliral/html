@@ -1,0 +1,2670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d0b1a" />
+<meta name="color-scheme" content="dark" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Fibble — a game of plausible lies</title>
+<meta name="description" content="Fibble — a Fibbage-inspired pass-and-play party game. Write a convincing lie, spot the real answer, and fool your friends." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0d0b1a;
+    --panel: rgba(255,255,255,.055);
+    --panel-2: rgba(255,255,255,.03);
+    --line: rgba(255,255,255,.11);
+    --text: #f4f2ff;
+    --muted: #a5a0c9;
+    --pink: #ff4d8d;
+    --orange: #ff9f43;
+    --cyan: #22d3ee;
+    --green: #34d399;
+    --gold: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --radius: 18px;
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(1100px 550px at 50% -12%, rgba(124,58,237,.35), transparent 65%),
+      radial-gradient(800px 500px at 110% 110%, rgba(255,77,141,.16), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; }
+  input, textarea { font-family: inherit; }
+
+  /* ---------- screens ---------- */
+  #app { min-height: 100dvh; display: flex; flex-direction: column; }
+  .screen {
+    display: none; flex: 1; width: 100%; max-width: 640px; margin: 0 auto;
+    padding: 24px 18px calc(env(safe-area-inset-bottom, 0px) + 32px);
+  }
+  .screen.active { display: flex; flex-direction: column; animation: screenIn .32s cubic-bezier(.2,.8,.3,1); }
+  @keyframes screenIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- type ---------- */
+  h1, h2, h3 { margin: 0; letter-spacing: -.02em; }
+  .tagline { color: var(--muted); font-size: 15px; margin: 10px 0 0; line-height: 1.5; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .center { text-align: center; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    border: 1.5px solid var(--line); background: var(--panel); color: var(--text);
+    font-size: 17px; font-weight: 800; padding: 16px 22px; border-radius: 16px;
+    cursor: pointer; touch-action: manipulation; width: 100%;
+    transition: transform .12s, border-color .15s, background .15s, filter .15s;
+  }
+  .btn:hover { border-color: rgba(255,255,255,.28); }
+  .btn:active { transform: scale(.97); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--pink), var(--orange));
+    border: none; color: #1a0b13; box-shadow: 0 10px 30px rgba(255,77,141,.35);
+  }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; }
+  .btn.small { font-size: 14px; padding: 10px 14px; border-radius: 12px; width: auto; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- menu ---------- */
+  .menu-top { display: flex; justify-content: space-between; align-items: center; }
+  .logo {
+    font-size: clamp(52px, 14vw, 84px); font-weight: 900; letter-spacing: -.05em; line-height: .95;
+    background: linear-gradient(120deg, #fff 10%, var(--pink) 45%, var(--orange) 80%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 30px rgba(255,77,141,.35));
+  }
+  .logo-sub { font-size: 14px; font-weight: 800; letter-spacing: .32em; text-transform: uppercase; color: var(--cyan); margin-top: 6px; }
+  .menu-actions { margin-top: 36px; display: flex; flex-direction: column; gap: 12px; }
+  .menu-note { margin-top: auto; padding-top: 28px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .menu-badge { display: inline-block; font-size: 12px; font-weight: 700; color: var(--muted); border: 1px solid var(--line); padding: 6px 10px; border-radius: 999px; }
+
+  /* ---------- panels & chips ---------- */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--muted);
+  }
+  .chip.accent { color: var(--cyan); border-color: rgba(34,211,238,.35); background: rgba(34,211,238,.08); }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+  /* ---------- statement ---------- */
+  .statement { font-size: clamp(23px, 5.4vw, 32px); font-weight: 800; line-height: 1.38; letter-spacing: -.01em; margin: 18px 0 6px; }
+  .statement.small { font-size: clamp(19px, 4.4vw, 24px); }
+  .blank {
+    display: inline-block; min-width: 2.4em; padding: 0 .18em; text-align: center; color: var(--cyan);
+    border-bottom: 3px dashed rgba(34,211,238,.7); animation: blankPulse 1.6s ease-in-out infinite;
+  }
+  .blank.filled { color: var(--green); border-bottom-color: var(--green); animation: none; font-weight: 900; }
+  .blank.reveal { animation: popIn .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes blankPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+  @keyframes popIn { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+  /* ---------- hud ---------- */
+  .hud {
+    display: none; position: sticky; top: 0; z-index: 30;
+    background: rgba(13,11,26,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+  }
+  .hud.show { display: block; }
+  .hud-inner { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .hud-top { display: flex; align-items: center; justify-content: space-between; padding-right: 46px; }
+  .hud-round { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .hud-players { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hud-player {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+    padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--muted);
+  }
+  .hud-player.active { border-color: var(--pink); color: var(--text); background: rgba(255,77,141,.14); }
+  .hud-player b { color: var(--gold); font-variant-numeric: tabular-nums; }
+  .hud-player.active b { color: #fff; }
+
+  /* ---------- mute ---------- */
+  .mute {
+    position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; z-index: 50;
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line);
+    background: rgba(20,17,38,.85); color: var(--text); font-size: 17px; cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .mute:hover { border-color: rgba(255,255,255,.3); }
+
+  /* ---------- pass screen ---------- */
+  .pass-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 40px 0; }
+  .avatar {
+    width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 42px; font-weight: 900; color: #1a0b13;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    box-shadow: 0 12px 40px rgba(34,211,238,.3); margin-bottom: 6px;
+  }
+  .pass-name { font-size: clamp(30px, 8vw, 44px); font-weight: 900; letter-spacing: -.02em; }
+  .pass-sub { color: var(--muted); font-size: 15px; max-width: 340px; line-height: 1.5; margin: 4px auto 22px; }
+
+  /* ---------- forms ---------- */
+  .field { margin-top: 18px; }
+  .field label { display: block; font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .input, textarea.input {
+    width: 100%; font-size: 17px; padding: 15px 16px; border-radius: 14px; border: 1.5px solid var(--line);
+    background: rgba(0,0,0,.22); color: var(--text); outline: none; transition: border-color .15s;
+  }
+  .input:focus { border-color: var(--cyan); }
+  textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
+  .input.big { font-size: 19px; font-weight: 700; padding: 17px 18px; }
+  .err { color: var(--red); font-size: 14px; font-weight: 700; margin-top: 10px; min-height: 20px; }
+  .shake { animation: shake .4s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  /* ---------- setup ---------- */
+  .players { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .prow { display: flex; gap: 8px; align-items: center; }
+  .prow .pnum { width: 26px; text-align: center; color: var(--muted); font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .prow .input { flex: 1; }
+  .pdel { width: 44px; height: 48px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; }
+  .pdel:hover { color: var(--red); border-color: rgba(248,113,113,.4); }
+  .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+  .seg button {
+    flex: 1; min-width: 64px; padding: 12px 0; border-radius: 12px; border: 1.5px solid var(--line);
+    background: var(--panel-2); color: var(--muted); font-weight: 800; font-size: 16px; cursor: pointer; transition: .15s;
+  }
+  .seg button.active { border-color: var(--pink); color: var(--text); background: rgba(255,77,141,.14); }
+  .toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-top: 20px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--panel-2); cursor: pointer;
+  }
+  .toggle .t-label { font-size: 15px; font-weight: 700; }
+  .toggle .t-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; border-radius: 999px; background: rgba(255,255,255,.14); transition: .2s; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: .2s; }
+  .toggle input { display: none; }
+  .toggle input:checked + .switch { background: var(--pink); }
+  .toggle input:checked + .switch::after { transform: translateX(22px); }
+
+  /* ---------- centered intro ---------- */
+  .center-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; padding: 30px 0; }
+  .big-title { font-size: clamp(30px, 8vw, 44px); font-weight: 900; letter-spacing: -.02em; line-height: 1.1; }
+  .round-num {
+    font-size: clamp(64px, 18vw, 110px); font-weight: 900; line-height: 1; letter-spacing: -.06em;
+    background: linear-gradient(135deg, var(--cyan), var(--purple) 60%, var(--pink));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* ---------- vote options ---------- */
+  .opts { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+  .opt {
+    width: 100%; text-align: left; padding: 16px 18px; font-size: 17px; font-weight: 700; line-height: 1.35;
+    border-radius: 15px; border: 1.5px solid var(--line); background: var(--panel); color: var(--text);
+    cursor: pointer; display: flex; gap: 12px; align-items: center;
+    transition: transform .12s, border-color .15s, background .15s;
+  }
+  .opt .ltr {
+    width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center;
+    font-size: 12px; font-weight: 900; background: rgba(255,255,255,.1); color: var(--muted);
+  }
+  .opt:hover { border-color: var(--pink); transform: translateY(-1px); }
+  .opt:active { transform: scale(.985); }
+
+  /* ---------- reveal ---------- */
+  .ans {
+    border-radius: 16px; border: 1px solid var(--line); background: var(--panel); padding: 14px 16px;
+    animation: rise .45s cubic-bezier(.2,.8,.3,1) backwards;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .ans + .ans { margin-top: 10px; }
+  .ans.truth { border-color: rgba(52,211,153,.6); background: rgba(52,211,153,.1); box-shadow: 0 0 24px rgba(52,211,153,.12); }
+  .ans .tag { font-size: 11px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
+  .ans .tag.truth-tag { color: var(--green); }
+  .ans .tag.lie-tag { color: var(--pink); }
+  .ans-text { font-size: 17px; font-weight: 800; line-height: 1.35; word-break: break-word; }
+  .ans-meta { font-size: 13px; color: var(--muted); margin-top: 7px; line-height: 1.45; }
+  .ans-meta .pts { color: var(--gold); font-weight: 800; }
+  .ans-meta .voter { color: var(--text); }
+
+  /* ---------- scores ---------- */
+  .scores { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .srow {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px;
+    background: var(--panel-2); border: 1px solid var(--line); font-size: 14px;
+  }
+  .srow .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 900; color: #120a1c; flex-shrink: 0; }
+  .srow .nm { font-weight: 800; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow .why { color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+  .srow .delta { font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; }
+  .srow .delta.zero { color: var(--muted); }
+  .srow .tot { font-size: 12px; color: var(--muted); min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- final ---------- */
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 10px; margin-top: 26px; min-height: 190px; }
+  .pod {
+    flex: 1; max-width: 150px; border-radius: 16px 16px 0 0; padding: 12px 8px 14px; text-align: center;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+    animation: rise .6s cubic-bezier(.2,.8,.3,1) backwards;
+  }
+  .pod .pname { font-weight: 900; font-size: 15px; line-height: 1.2; word-break: break-word; }
+  .pod .pscore { font-size: 13px; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .pod .pmedal { font-size: 26px; }
+  .pod.first { height: 170px; background: linear-gradient(180deg, rgba(251,191,36,.32), rgba(251,191,36,.1)); border: 1px solid rgba(251,191,36,.5); }
+  .pod.second { height: 130px; background: linear-gradient(180deg, rgba(203,213,225,.22), rgba(203,213,225,.07)); border: 1px solid rgba(203,213,225,.35); }
+  .pod.third { height: 105px; background: linear-gradient(180deg, rgba(217,119,6,.25), rgba(217,119,6,.08)); border: 1px solid rgba(217,119,6,.4); }
+  .final-list { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .final-list .srow .rank { font-weight: 900; color: var(--muted); width: 22px; text-align: center; font-size: 13px; }
+
+  /* ---------- editor ---------- */
+  .qitem { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel-2); margin-top: 10px; }
+  .qitem .qhead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .qitem .qtext { font-size: 15px; font-weight: 700; line-height: 1.4; }
+  .qitem .qtext .b { color: var(--cyan); border-bottom: 2px dashed rgba(34,211,238,.6); }
+  .qitem .qans { font-size: 13.5px; color: var(--green); margin-top: 6px; font-weight: 700; }
+  .qitem .qact { display: flex; gap: 8px; margin-top: 10px; }
+  .qitem .qact button { font-size: 12.5px; font-weight: 800; padding: 7px 11px; border-radius: 9px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+  .qitem .qact button:hover { color: var(--text); border-color: rgba(255,255,255,.3); }
+  .qitem .qact button.danger:hover { color: var(--red); border-color: rgba(248,113,113,.5); }
+  .badge { font-size: 10.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; }
+  .badge.builtin { background: rgba(167,139,250,.16); color: var(--purple); }
+  .badge.custom { background: rgba(34,211,238,.14); color: var(--cyan); }
+  .rowline { display: flex; gap: 10px; align-items: center; }
+  .rowline .input { flex: 1; }
+  .grow { flex: 1; }
+  .mt8 { margin-top: 8px; } .mt12 { margin-top: 12px; } .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; } .mt24 { margin-top: 24px; }
+
+  /* ---------- how to play ---------- */
+  .rules { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+  .rule { display: flex; gap: 14px; align-items: flex-start; }
+  .rule .rn {
+    width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center;
+    font-weight: 900; font-size: 14px; color: #120a1c;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+  }
+  .rule h3 { font-size: 16px; margin-bottom: 4px; }
+  .rule p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+
+  /* ---------- confetti ---------- */
+  #confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 40; }
+  #confetti i { position: absolute; top: -24px; width: 9px; height: 15px; border-radius: 2px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(760deg); } }
+
+  /* ---------- online ---------- */
+  .online-note { margin: 8px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+  .online-note b { color: var(--gold); }
+  .roomcode {
+    font-size: clamp(38px, 11vw, 60px); font-weight: 900; letter-spacing: .14em; line-height: 1.15;
+    margin-top: 4px; color: var(--text); text-shadow: 0 0 34px rgba(34,211,238,.45);
+    word-break: break-all;
+  }
+  .code-input { text-align: center; text-transform: uppercase; letter-spacing: .28em; font-weight: 900; font-size: 26px; }
+  .hostbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .hostbar .chip { font-size: 11px; padding: 5px 10px; }
+  .lobby-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .lobby-item {
+    display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 14px;
+    border: 1px solid var(--line); background: var(--panel-2);
+  }
+  .lobby-item .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 900; color: #120a1c; flex-shrink: 0; }
+  .lobby-item .nm { flex: 1; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lobby-item .tag { font-size: 10.5px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .lobby-item .tag.host { color: var(--gold); }
+  .lobby-item .off { font-size: 11px; font-weight: 800; color: var(--red); }
+  .lobby-item .kick { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 9px; padding: 6px 9px; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .lobby-item .kick:hover { color: var(--red); border-color: rgba(248,113,113,.5); }
+  .pbar {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px;
+    background: var(--panel-2); border: 1px solid var(--line); font-size: 14px;
+  }
+  .pbar + .pbar { margin-top: 7px; }
+  .pbar .dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; color: #120a1c; flex-shrink: 0; }
+  .pbar .nm { flex: 1; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pbar .st { font-size: 12px; font-weight: 800; color: var(--muted); }
+  .pbar .st.ok { color: var(--green); }
+  .pbar .st.off { color: var(--red); }
+  .plist { margin-top: 10px; }
+  .netline { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+  .netdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .netdot.on { background: var(--green); box-shadow: 0 0 10px rgba(52,211,153,.7); }
+  .netdot.off { background: var(--red); }
+  .host-you { margin-top: 16px; padding: 16px; border: 1px solid rgba(255,77,141,.35); border-radius: 16px; background: rgba(255,77,141,.07); }
+  .host-you .eyebrow { color: var(--pink); }
+  .waitline { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 14px; margin-top: 18px; line-height: 1.5; text-align: center; }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); border-top-color: var(--cyan); animation: spin 1s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .rankline { font-size: clamp(40px, 12vw, 64px); font-weight: 900; line-height: 1; letter-spacing: -.03em; }
+  .opt.picked { border-color: var(--pink); background: rgba(255,77,141,.16); }
+  .opt:disabled { cursor: default; opacity: .65; }
+  .opt:disabled.picked { opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<header class="hud" id="hud">
+  <div class="hud-inner">
+    <div class="hud-top">
+      <div class="hud-round" id="hudRound">Round 1 / 8</div>
+      <div class="chip accent" id="hudCat" style="font-size:11px;padding:5px 10px">Category</div>
+    </div>
+    <div class="hud-players" id="hudPlayers"></div>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ============ MENU ============ -->
+  <section class="screen active" id="scr-menu">
+    <div class="menu-top">
+      <span class="menu-badge">party game · pass &amp; play</span>
+    </div>
+    <div style="margin-top:26px">
+      <div class="logo">FIBBLE</div>
+      <div class="logo-sub">Lie. Vote. Win.</div>
+      <p class="tagline">Everyone writes a convincing lie. Spot the real answer — or fool the whole room.</p>
+    </div>
+    <div class="menu-actions">
+      <button class="btn primary" id="btnPlay">▶&nbsp; Pass &amp; play</button>
+      <button class="btn" id="btnOnline">🌐&nbsp; Play online</button>
+      <button class="btn" id="btnHow">❓&nbsp; How to play</button>
+      <button class="btn ghost" id="btnEditor">✎&nbsp; Questions <span id="menuQCount" style="color:var(--muted);font-weight:700;font-size:14px"></span></button>
+    </div>
+    <div class="menu-note">
+      Built-in question bank plus your own questions. Works fully offline — everything is stored on this device.
+    </div>
+  </section>
+
+  <!-- ============ HOW TO PLAY ============ -->
+  <section class="screen" id="scr-how">
+    <div class="rowline">
+      <button class="btn small ghost" id="howBack">← Back</button>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">How to play</h2>
+    <p class="tagline">A trivia game where the lies matter as much as the truth.</p>
+    <div class="rules">
+      <div class="rule">
+        <div class="rn">1</div>
+        <div><h3>Get a question</h3><p>Each round shows a strange-but-true fact with one key word missing. Everyone sees the same blank.</p></div>
+      </div>
+      <div class="rule">
+        <div class="rn">2</div>
+        <div><h3>Write a lie</h3><p>Pass the device around. Each player secretly types a fake answer that sounds convincing. You can't submit the real answer — and you can't copy someone else's lie.</p></div>
+      </div>
+      <div class="rule">
+        <div class="rn">3</div>
+        <div><h3>Vote for the truth</h3><p>All the lies are shuffled together with the real answer. Pass the device again and each player picks the one they think is true. You can't vote for your own lie.</p></div>
+      </div>
+      <div class="rule">
+        <div class="rn">4</div>
+        <div><h3>Score points</h3><p><b style="color:var(--gold)">+500</b> for finding the truth, and <b style="color:var(--gold)">+500</b> for every player your lie fools. The final round can be worth double.</p></div>
+      </div>
+      <div class="rule">
+        <div class="rn">5</div>
+        <div><h3>Win</h3><p>After the last round, the highest score wins. Bragging rights included.</p></div>
+      </div>
+    </div>
+    <div class="card mt24" style="border-color:rgba(34,211,238,.3);background:rgba(34,211,238,.06)">
+      <div class="eyebrow" style="color:var(--cyan)">Pass &amp; play</div>
+      <p style="margin:8px 0 0;font-size:14.5px;line-height:1.55;color:var(--muted)">
+        One device, up to 8 players. The screen always tells you who to pass it to, and hides answers between turns — no peeking.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ QUESTION EDITOR ============ -->
+  <section class="screen" id="scr-editor">
+    <div class="rowline">
+      <button class="btn small ghost" id="edBack">← Back</button>
+      <div class="grow"></div>
+      <span class="chip" id="qCount" style="font-size:12px"></span>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">Questions</h2>
+    <p class="tagline">Add your own questions, or export/import a pack as JSON.</p>
+
+    <div class="card mt20">
+      <div class="eyebrow" id="qFormTitle">Add a question</div>
+      <form id="qForm" autocomplete="off">
+        <div class="field">
+          <label for="qCat">Category</label>
+          <input class="input" id="qCat" type="text" maxlength="24" placeholder="e.g. History, Science, Inside jokes" />
+        </div>
+        <div class="field">
+          <label for="qText">Statement — use ___ for the blank</label>
+          <textarea class="input" id="qText" maxlength="240" placeholder='e.g. The first programmer was ___ Lovelace.'></textarea>
+        </div>
+        <div class="field">
+          <label for="qAns">The real answer</label>
+          <input class="input" id="qAns" type="text" maxlength="80" placeholder="e.g. Ada" />
+        </div>
+        <div class="err" id="qErr"></div>
+        <div class="rowline mt8">
+          <button type="submit" class="btn primary" id="qSave" style="flex:1">Save question</button>
+          <button type="button" class="btn small ghost" id="qCancel" hidden>Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="rowline mt16">
+      <button class="btn small" id="importBtn" type="button">⇪ Import JSON</button>
+      <button class="btn small" id="exportBtn" type="button">⇩ Export JSON</button>
+      <div class="grow"></div>
+      <button class="btn small ghost" id="clearCustom" type="button" style="color:var(--red)">Clear mine</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden />
+
+    <div class="field mt20" style="margin-top:24px">
+      <label for="qSearch">All questions</label>
+      <input class="input" id="qSearch" type="search" placeholder="Search statements, answers, categories…" autocomplete="off" />
+    </div>
+    <div id="qList"></div>
+  </section>
+
+  <!-- ============ SETUP ============ -->
+  <section class="screen" id="scr-setup">
+    <div class="rowline">
+      <button class="btn small ghost" id="suBack">← Back</button>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">Set up the game</h2>
+    <p class="tagline">2–8 players, one device. Take turns and don't peek.</p>
+
+    <div class="field mt24">
+      <label>Rounds</label>
+      <div class="seg" id="roundSeg">
+        <button type="button" data-rounds="5">5</button>
+        <button type="button" data-rounds="8" class="active">8</button>
+        <button type="button" data-rounds="10">10</button>
+        <button type="button" data-rounds="12">12</button>
+      </div>
+    </div>
+
+    <label class="toggle" for="doubleFinal">
+      <div>
+        <div class="t-label">Double points final round</div>
+        <div class="t-sub">The last round scores twice as much</div>
+      </div>
+      <input type="checkbox" id="doubleFinal" checked />
+      <span class="switch"></span>
+    </label>
+
+    <div class="field mt24">
+      <label>Players</label>
+      <div class="players" id="playerList"></div>
+      <button type="button" class="btn ghost mt12" id="addPlayerBtn">＋ Add player</button>
+    </div>
+
+    <div class="err" id="setupErr"></div>
+    <button class="btn primary mt12" id="startBtn">Start game →</button>
+  </section>
+
+  <!-- ============ ROUND INTRO ============ -->
+  <section class="screen" id="scr-intro">
+    <div class="center-wrap">
+      <div class="eyebrow">Round</div>
+      <div class="round-num" id="introRound">1</div>
+      <div class="chiprow">
+        <span class="chip accent" id="introCat">Category</span>
+        <span class="chip" id="introOf">of 8</span>
+      </div>
+      <p class="tagline" style="max-width:320px">A weird fact is coming. One key word is missing — everyone will have to fill it in.</p>
+      <button class="btn primary" id="introGo" style="margin-top:10px">Read the question →</button>
+    </div>
+  </section>
+
+  <!-- ============ PASS SCREEN ============ -->
+  <section class="screen" id="scr-pass">
+    <div class="pass-wrap">
+      <div class="eyebrow" id="passEyebrow">Pass the device to</div>
+      <div class="avatar" id="passAv">A</div>
+      <div class="pass-name" id="passName">Player</div>
+      <p class="pass-sub" id="passSub">Make sure nobody else can see the screen.</p>
+      <button class="btn primary" id="passReady" style="max-width:320px">I'm ready 👆</button>
+    </div>
+  </section>
+
+  <!-- ============ WRITE A LIE ============ -->
+  <section class="screen" id="scr-write">
+    <div class="chiprow" style="justify-content:flex-start">
+      <span class="chip accent" id="writeCat">Category</span>
+    </div>
+    <div class="statement" id="writeStmt"></div>
+    <div class="eyebrow mt16" id="writeTurn">Player's turn</div>
+    <form id="writeForm" autocomplete="off">
+      <div class="field" style="margin-top:10px">
+        <label for="lieInput">Your lie — fill in the blank</label>
+        <input class="input big" id="lieInput" type="text" maxlength="80" enterkeyhint="done" autocapitalize="sentences" placeholder="Type something believable…" />
+      </div>
+      <div class="err" id="lieErr"></div>
+      <button class="btn primary" type="submit">Lock in my lie 🔒</button>
+    </form>
+    <p class="tagline" style="margin-top:16px">Tip: the real answer is often surprisingly weird. A confident, specific lie works best.</p>
+  </section>
+
+  <!-- ============ INTERSTITIAL ============ -->
+  <section class="screen" id="scr-inter">
+    <div class="center-wrap">
+      <div class="big-title" id="interTitle">All answers in!</div>
+      <p class="tagline" id="interSub" style="max-width:340px"></p>
+      <button class="btn primary" id="interBtn" style="max-width:320px">Continue →</button>
+    </div>
+  </section>
+
+  <!-- ============ VOTE ============ -->
+  <section class="screen" id="scr-vote">
+    <div class="chiprow" style="justify-content:flex-start">
+      <span class="chip accent" id="voteCat">Category</span>
+    </div>
+    <div class="statement small" id="voteStmt"></div>
+    <div class="eyebrow mt16" id="voteTurn">Player's turn to vote</div>
+    <p class="tagline" style="margin-top:6px">Tap the answer you think is the truth. You can't pick your own lie.</p>
+    <div class="opts" id="voteOpts"></div>
+  </section>
+
+  <!-- ============ REVEAL ============ -->
+  <section class="screen" id="scr-reveal">
+    <div class="chiprow" style="justify-content:flex-start">
+      <span class="chip accent" id="revCat">Category</span>
+      <span class="chip" id="revRound">Round 1</span>
+    </div>
+    <div class="statement" id="revStmt"></div>
+    <div class="eyebrow mt20">The answers</div>
+    <div class="mt8" id="revCards"></div>
+    <div class="eyebrow mt24">This round</div>
+    <div class="scores" id="revScores"></div>
+    <button class="btn primary mt24" id="revNext">Next round →</button>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="screen" id="scr-final">
+    <div class="center">
+      <div class="eyebrow">Final results</div>
+      <div class="big-title mt8" id="finalTitle">🏆 We have a winner!</div>
+      <p class="tagline" id="finalSub"></p>
+    </div>
+    <div class="podium" id="podium"></div>
+    <div class="final-list" id="finalList"></div>
+    <div class="rowline mt24">
+      <button class="btn primary" id="againBtn">Play again</button>
+      <button class="btn ghost" id="menuBtn">Main menu</button>
+    </div>
+  </section>
+
+
+  <!-- ============ ONLINE MENU ============ -->
+  <section class="screen" id="scr-online">
+    <div class="rowline">
+      <button class="btn small ghost" id="onBack">← Back</button>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">Play online</h2>
+    <p class="tagline">Everyone plays on their own phone. No accounts, no app install.</p>
+    <div class="menu-actions">
+      <button class="btn primary" id="onHost">📺&nbsp; Host a game</button>
+      <button class="btn" id="onJoin">📱&nbsp; Join a game</button>
+    </div>
+    <div class="card mt24">
+      <div class="eyebrow">How it connects</div>
+      <p class="online-note">Devices talk through a free public MQTT relay over the internet — there is no server to set up. Rooms are separated by a random code. The relay can technically see game traffic, so don't play with real secrets.</p>
+      <p class="online-note" id="netWarn" hidden></p>
+      <div class="netline" id="netLine"><span class="netdot"></span>Offline</div>
+    </div>
+  </section>
+
+  <!-- ============ HOST SETUP ============ -->
+  <section class="screen" id="scr-hostsetup">
+    <div class="rowline">
+      <button class="btn small ghost" id="hsBack">← Back</button>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">Host a game</h2>
+    <p class="tagline">This device becomes the shared board. Players join from their phones with a room code.</p>
+
+    <label class="toggle" for="hsPlaying">
+      <div>
+        <div class="t-label">I'm playing too</div>
+        <div class="t-sub">Adds you as a player on this device</div>
+      </div>
+      <input type="checkbox" id="hsPlaying" checked />
+      <span class="switch"></span>
+    </label>
+
+    <div class="field" id="hsNameWrap">
+      <label for="hsName">Your name</label>
+      <input class="input" id="hsName" type="text" maxlength="16" placeholder="Host" autocomplete="off" autocapitalize="words" />
+    </div>
+
+    <div class="field">
+      <label>Rounds</label>
+      <div class="seg" id="hsRounds">
+        <button type="button" data-rounds="5">5</button>
+        <button type="button" data-rounds="8" class="active">8</button>
+        <button type="button" data-rounds="10">10</button>
+        <button type="button" data-rounds="12">12</button>
+      </div>
+    </div>
+
+    <label class="toggle" for="hsDouble">
+      <div>
+        <div class="t-label">Double points final round</div>
+        <div class="t-sub">The last round scores twice as much</div>
+      </div>
+      <input type="checkbox" id="hsDouble" checked />
+      <span class="switch"></span>
+    </label>
+
+    <div class="err" id="hsErr"></div>
+    <button class="btn primary mt12" id="hsCreate">Create room</button>
+  </section>
+
+  <!-- ============ JOIN ============ -->
+  <section class="screen" id="scr-join">
+    <div class="rowline">
+      <button class="btn small ghost" id="jnBack">← Back</button>
+    </div>
+    <h2 style="font-size:30px;margin-top:18px">Join a game</h2>
+    <p class="tagline">Enter the room code shown on the host screen.</p>
+
+    <div class="field mt24">
+      <label for="jnCode">Room code</label>
+      <input class="input big code-input" id="jnCode" type="text" maxlength="6" placeholder="H4K2M9" autocapitalize="characters" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="field">
+      <label for="jnName">Your name</label>
+      <input class="input" id="jnName" type="text" maxlength="16" placeholder="Player" autocomplete="off" autocapitalize="words" />
+    </div>
+    <div class="err" id="jnErr"></div>
+    <button class="btn primary mt12" id="jnGo">Join room</button>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section class="screen" id="scr-lobby">
+    <div class="rowline">
+      <button class="btn small ghost" id="lbLeave">← Leave</button>
+      <div class="grow"></div>
+      <span class="netdot" id="lbNet"></span>
+    </div>
+    <div class="center mt20">
+      <div class="eyebrow">Room code</div>
+      <div class="roomcode" id="lbCode">------</div>
+      <button class="btn small ghost mt8" id="lbCopy">Copy invite link</button>
+      <p class="tagline" id="lbHint">Open the game on your phone and enter this code.</p>
+    </div>
+    <div class="eyebrow mt24">Players <span id="lbCount"></span></div>
+    <div class="lobby-list" id="lbPlayers"></div>
+    <button class="btn primary mt20" id="lbStart" hidden>Start game →</button>
+    <p class="tagline center mt16" id="lbWait" hidden>Waiting for the host to start…</p>
+  </section>
+
+  <!-- ============ HOST BOARD ============ -->
+  <section class="screen" id="scr-host">
+    <div class="hostbar">
+      <span class="chip accent" id="hbRound">Lobby</span>
+      <span class="chip" id="hbCat" hidden></span>
+      <span class="chip" id="hbRoom"></span>
+    </div>
+    <div id="hostBody"></div>
+  </section>
+
+  <!-- ============ PLAYER ============ -->
+  <section class="screen" id="scr-player">
+    <div class="hostbar">
+      <span class="chip accent" id="pbRound">Lobby</span>
+      <span class="chip" id="pbScore">0 pts</span>
+      <span class="chip" id="pbRoom"></span>
+    </div>
+    <div id="playerBody"></div>
+  </section>
+
+</main>
+
+<button class="mute" id="muteBtn" aria-label="Toggle sound">🔊</button>
+<div id="confetti"></div>
+
+<script>
+/* ============================================================
+   FIBBLE — a Fibbage-inspired pass-and-play party game
+   Single file, no dependencies, works offline.
+   ============================================================ */
+
+/* ---------- built-in question bank: [category, statement, answer] ---------- */
+const BUILTIN_RAW = [
+  /* History */
+  ["History", "The shortest war in history lasted under an hour in 1896, fought between Britain and ___.", "Zanzibar"],
+  ["History", "Cleopatra lived closer in time to the moon landing than to the construction of ___.", "the Great Pyramid of Giza"],
+  ["History", "The Eiffel Tower was only meant to stand for 20 years before being ___.", "demolished"],
+  ["History", "In 1518, people in Strasbourg danced for days on end in an event now known as the ___.", "Dancing Plague"],
+  ["History", "Lady Jane Grey reigned as Queen of England for just ___ days.", "nine"],
+  ["History", "The fall of Constantinople in 1453 marked the end of the ___ Empire.", "Byzantine"],
+  ["History", "The state of Alaska was bought from Russia in 1867 for roughly two cents per ___.", "acre"],
+  ["History", "The Berlin Wall came down in ___.", "1989"],
+  ["History", "In 1929, the Wall Street crash that kicked off the Great Depression became known as Black ___.", "Thursday"],
+
+  /* Science */
+  ["Science", "A day on the planet ___ is longer than its year.", "Mercury"],
+  ["Science", "Lightning is about five times hotter than the surface of the ___.", "Sun"],
+  ["Science", "Despite its name, the strawberry is not a true ___.", "berry"],
+  ["Science", "An octopus has ___ hearts.", "three"],
+  ["Science", "Sharks are older than ___ — they ruled the oceans long before trees existed.", "trees"],
+  ["Science", "Tardigrades can survive the vacuum of ___.", "space"],
+  ["Science", "Parts of Antarctica are so dry that they are technically a ___.", "desert"],
+  ["Science", "The only mammals capable of true sustained flight are ___.", "bats"],
+  ["Science", "Venus spins the opposite way to most planets — it rotates ___.", "backwards"],
+  ["Science", "Some of the water in your glass may have once been drunk by a ___.", "dinosaur"],
+  ["Science", "An adult human has about 206 ___.", "bones"],
+  ["Science", "The Great Barrier Reef is so big it can be seen from ___.", "space"],
+  ["Science", "An adult cat has around 230 bones — more than a ___.", "human"],
+  ["Science", "The largest organ in the human body is the ___.", "skin"],
+
+  /* Nature */
+  ["Nature", "A group of crows is called a ___.", "murder"],
+  ["Nature", "A group of flamingos is called a ___.", "flamboyance"],
+  ["Nature", "The bird that can twist its head almost 180 degrees is the ___.", "owl"],
+  ["Nature", "The electric eel is not really an eel, but a type of ___.", "knifefish"],
+  ["Nature", "Honey found in ancient Egyptian tombs is still ___ after thousands of years.", "edible"],
+  ["Nature", "The blue whale is the largest animal that has ever ___ on Earth.", "lived"],
+
+  /* Food */
+  ["Food", "The world's most expensive spice by weight, harvested from crocus threads, is ___.", "saffron"],
+  ["Food", "Most \"wasabi\" served in restaurants is actually dyed ___.", "horseradish"],
+  ["Food", "In Japan, eating food from ___ is a beloved Christmas tradition.", "KFC"],
+  ["Food", "The mascot dog of Cracker Jack is named ___.", "Bingo"],
+  ["Food", "Côte d'Ivoire is the world's largest producer of ___.", "cocoa"],
+  ["Food", "Fredric Baur, the inventor of the Pringles can, had his ashes buried in a ___ can.", "Pringles"],
+  ["Food", "Walter Morrison, the inventor of the Frisbee, had some of his ashes turned into a ___.", "Frisbee"],
+  ["Food", "Ruth Wakefield expected the chocolate chunks in her cookies to stay whole, but they ___ in the oven.", "melted"],
+  ["Food", "The first item ever scanned with a barcode in 1974 was a pack of ___ chewing gum.", "Wrigley's"],
+
+  /* Geography */
+  ["Geography", "The only sea in the world with no coastline is the ___ Sea.", "Sargasso"],
+  ["Geography", "The capital of Australia is not Sydney — it is ___.", "Canberra"],
+  ["Geography", "Australia is wider than the ___.", "moon"],
+  ["Geography", "The country with the most time zones in the world is ___.", "France"],
+  ["Geography", "Measured from base to peak, the tallest mountain on Earth is ___.", "Mauna Kea"],
+  ["Geography", "Lake Baikal in Russia holds about a fifth of the world's unfrozen ___.", "fresh water"],
+  ["Geography", "To build Amsterdam, the Dutch drove millions of wooden ___ into the marshland.", "piles"],
+
+  /* Language */
+  ["Language", "The dot above a lowercase i or j is called a ___.", "tittle"],
+  ["Language", "The word \"queue\" is just a Q followed by four ___ letters.", "silent"],
+  ["Language", "A sentence that uses every letter of the alphabet is called a ___.", "pangram"],
+  ["Language", "In written English, no letter is used more often than ___.", "E"],
+  ["Language", "The word ___ is often cited as having three consecutive pairs of double letters: oo, kk, ee.", "bookkeeper"],
+
+  /* Tech */
+  ["Tech", "The first message sent over ARPANET in 1969 was \"LO\" — the system crashed before the operators could finish typing ___.", "LOGIN"],
+  ["Tech", "Tim Berners-Lee invented the World Wide Web while working at ___.", "CERN"],
+  ["Tech", "The first .com domain ever registered, back in 1985, was ___.", "symbolics.com"],
+  ["Tech", "Google was originally called ___ before it got its famous name.", "BackRub"],
+  ["Tech", "eBay paid $2.6 billion for ___ in 2005, then sold it at a loss four years later.", "Skype"],
+
+  /* Pop Culture */
+  ["Pop Culture", "Pac-Man was originally released in Japan under the name ___.", "Puck-Man"],
+  ["Pop Culture", "In the original book, Dorothy's shoes in The Wizard of Oz were ___, not red.", "silver"],
+  ["Pop Culture", "The first voice of Mickey Mouse belonged to Walt ___ himself.", "Disney"],
+  ["Pop Culture", "Paul McCartney used the working lyric \"scrambled eggs\" while writing the Beatles' hit ___.", "Yesterday"],
+  ["Pop Culture", "The highest-grossing film of all time is James Cameron's ___.", "Avatar"],
+  ["Pop Culture", "Shrek was originally going to be voiced by ___ before Mike Myers took the role.", "Chris Farley"],
+
+  /* Sports */
+  ["Sports", "The ancient Greek word \"gymnos\" means ___ — which is why a gymnasium is named what it is.", "naked"],
+  ["Sports", "Only one country has played in every single FIFA World Cup: ___.", "Brazil"],
+  ["Sports", "The modern marathon is named after the town of ___.", "Marathon"],
+  ["Sports", "The Olympic flame is lit every four years at the ancient site of ___.", "Olympia"]
+];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const shuffle = arr => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+const stmtHTML = (text, fill) => {
+  const safe = esc(text);
+  if (fill !== undefined && fill !== null) {
+    return safe.replace('___', '<span class="blank filled reveal">' + esc(fill) + '</span>');
+  }
+  return safe.replace('___', '<span class="blank">?</span>');
+};
+const initials = name => (String(name).trim()[0] || '?').toUpperCase();
+const AV_COLORS = ['#22d3ee', '#a78bfa', '#ff4d8d', '#fbbf24', '#34d399', '#ff9f43', '#60a5fa', '#f472b6'];
+const avColor = i => AV_COLORS[i % AV_COLORS.length];
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const LS_CUSTOM = 'fibble.custom.v1';
+const LS_MUTED = 'fibble.muted.v1';
+
+function loadCustom() {
+  try {
+    const raw = localStorage.getItem(LS_CUSTOM);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(q => q && typeof q.text === 'string' && typeof q.answer === 'string')
+      .map((q, i) => ({
+        id: q.id || ('c' + i + Date.now().toString(36)),
+        category: String(q.category || 'Custom').trim() || 'Custom',
+        text: q.text.trim(),
+        answer: q.answer.trim()
+      }))
+      .filter(q => q.text && q.answer)
+      .filter(q => (q.text.match(/___/g) || []).length === 1 && !q.answer.includes('___'));
+  } catch { return []; }
+}
+function saveCustom() {
+  try { localStorage.setItem(LS_CUSTOM, JSON.stringify(customQ)); } catch {}
+}
+
+let customQ = loadCustom();
+
+const BUILTIN = BUILTIN_RAW.map((r, i) => ({ id: 'b' + i, builtin: true, category: r[0], text: r[1], answer: r[2] }));
+const allQuestions = () => BUILTIN.concat(customQ);
+
+/* ============================================================
+   SOUND (tiny WebAudio blips, no assets)
+   ============================================================ */
+let AC = null;
+let muted = false;
+try { muted = localStorage.getItem(LS_MUTED) === '1'; } catch {}
+
+function tone(freq, dur, type = 'triangle', vol = .06, delay = 0) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator();
+    const g = AC.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    const t = AC.currentTime + delay;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + .02);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(AC.destination);
+    o.start(t);
+    o.stop(t + dur + .05);
+  } catch {}
+}
+const sfx = {
+  click: () => tone(660, .08, 'square', .025),
+  ok: () => { tone(523, .12); tone(784, .16, 'triangle', .05, .08); },
+  truth: () => { tone(392, .14, 'sawtooth', .035); tone(523, .14, 'sawtooth', .035, .11); tone(659, .3, 'sawtooth', .045, .22); },
+  win: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .26, 'triangle', .05, i * .13)); },
+  err: () => tone(180, .2, 'sawtooth', .05)
+};
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+const G = {
+  players: [],
+  deck: [],
+  r: 0,
+  lies: [],       // [{ pid, text }]
+  votes: [],      // [{ pid, text }]
+  writeIdx: 0,
+  voteIdx: 0,
+  currentPid: null,
+  doubleFinal: true,
+  deltas: {}
+};
+const setupDraft = { names: ['', ''], rounds: 8, doubleFinal: true };
+let editingId = null;
+
+const curQ = () => G.deck[G.r];
+const playerById = id => G.players.find(p => p.id === id);
+const playerIndex = id => G.players.findIndex(p => p.id === id);
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+const GAME_SCREENS = ['scr-intro', 'scr-pass', 'scr-write', 'scr-inter', 'scr-vote', 'scr-reveal'];
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  $('hud').classList.toggle('show', GAME_SCREENS.includes(id));
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  window.scrollTo(0, 0);
+}
+
+function renderHud() {
+  const q = curQ();
+  $('hudRound').textContent = q ? `Round ${G.r + 1} / ${G.deck.length}` : '';
+  $('hudCat').textContent = q ? q.category : '';
+  $('hudPlayers').innerHTML = G.players.map(p =>
+    `<span class="hud-player ${p.id === G.currentPid ? 'active' : ''}">${esc(p.name)} <b>${p.score}</b></span>`
+  ).join('');
+}
+
+/* ============================================================
+   MENU
+   ============================================================ */
+function updateMenuCount() {
+  const n = allQuestions().length;
+  $('menuQCount').textContent = `(${n})`;
+}
+
+$('btnPlay').addEventListener('click', () => { resetSetupDraft(); go('scr-setup'); sfx.click(); });
+$('btnHow').addEventListener('click', () => { go('scr-how'); sfx.click(); });
+$('btnEditor').addEventListener('click', () => { openEditor(); sfx.click(); });
+$('howBack').addEventListener('click', () => { go('scr-menu'); sfx.click(); });
+$('edBack').addEventListener('click', () => { go('scr-menu'); sfx.click(); });
+$('suBack').addEventListener('click', () => { go('scr-menu'); sfx.click(); });
+
+/* ============================================================
+   QUESTION EDITOR
+   ============================================================ */
+function openEditor() {
+  resetQForm();
+  $('qSearch').value = '';
+  renderEditor();
+  go('scr-editor');
+}
+
+function renderEditor() {
+  $('qCount').textContent = `${BUILTIN.length} built-in · ${customQ.length} yours`;
+  renderQList();
+  updateMenuCount();
+}
+
+function renderQList() {
+  const query = norm($('qSearch').value || '');
+  const list = allQuestions().filter(q =>
+    !query || norm(q.text + ' ' + q.answer + ' ' + q.category).includes(query)
+  );
+  if (!list.length) {
+    $('qList').innerHTML = '<p class="tagline mt12">No questions match your search.</p>';
+    return;
+  }
+  $('qList').innerHTML = list.map(q => {
+    const text = esc(q.text).replace('___', '<span class="b">?</span>');
+    return `<div class="qitem" data-id="${q.id}">
+      <div class="qhead">
+        <span class="badge ${q.builtin ? 'builtin' : 'custom'}">${q.builtin ? 'Built-in' : 'Yours'}</span>
+        <span class="chip" style="padding:4px 8px;font-size:11px">${esc(q.category)}</span>
+      </div>
+      <div class="qtext">${text}</div>
+      <div class="qans">→ ${esc(q.answer)}</div>
+      ${q.builtin ? '' : `<div class="qact">
+        <button type="button" data-act="edit">Edit</button>
+        <button type="button" data-act="del" class="danger">Delete</button>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+
+function resetQForm() {
+  editingId = null;
+  $('qFormTitle').textContent = 'Add a question';
+  $('qCat').value = '';
+  $('qText').value = '';
+  $('qAns').value = '';
+  $('qErr').textContent = '';
+  $('qSave').textContent = 'Save question';
+  $('qCancel').hidden = true;
+}
+
+$('qForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const cat = $('qCat').value.trim() || 'Custom';
+  const text = $('qText').value.trim();
+  const ans = $('qAns').value.trim();
+  const fail = msg => {
+    $('qErr').textContent = msg;
+    $('qText').classList.add('shake');
+    setTimeout(() => $('qText').classList.remove('shake'), 450);
+    sfx.err();
+  };
+  if (!text) return fail('Write the statement first.');
+  const blanks = (text.match(/___/g) || []).length;
+  if (blanks !== 1) return fail('Use exactly one ___ to mark the blank.');
+  if (!ans) return fail('Now add the real answer.');
+  if (ans.includes('___')) return fail('The answer cannot contain ___.');
+
+  if (editingId) {
+    const q = customQ.find(x => x.id === editingId);
+    if (q) { q.category = cat; q.text = text; q.answer = ans; }
+  } else {
+    customQ.unshift({
+      id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      category: cat, text, answer: ans
+    });
+  }
+  saveCustom();
+  resetQForm();
+  renderEditor();
+  sfx.ok();
+});
+
+$('qCancel').addEventListener('click', () => { resetQForm(); sfx.click(); });
+$('qSearch').addEventListener('input', renderQList);
+
+$('qList').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const id = btn.closest('.qitem').dataset.id;
+  const q = customQ.find(x => x.id === id);
+  if (!q) return;
+  if (btn.dataset.act === 'edit') {
+    editingId = id;
+    $('qFormTitle').textContent = 'Edit question';
+    $('qCat').value = q.category;
+    $('qText').value = q.text;
+    $('qAns').value = q.answer;
+    $('qSave').textContent = 'Save changes';
+    $('qCancel').hidden = false;
+    $('qErr').textContent = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('qText').focus();
+    sfx.click();
+  } else if (btn.dataset.act === 'del') {
+    if (confirm('Delete this question?')) {
+      customQ = customQ.filter(x => x.id !== id);
+      saveCustom();
+      renderEditor();
+      sfx.click();
+    }
+  }
+});
+
+$('clearCustom').addEventListener('click', () => {
+  if (!customQ.length) { alert('You have no custom questions yet.'); return; }
+  if (confirm('Delete all of your custom questions? This cannot be undone.')) {
+    customQ = [];
+    saveCustom();
+    renderEditor();
+    sfx.click();
+  }
+});
+
+$('importBtn').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const parsed = JSON.parse(await file.text());
+    const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.questions) ? parsed.questions : []);
+    const seen = new Set(allQuestions().map(q => norm(q.text) + '|' + norm(q.answer)));
+    let added = 0, skipped = 0;
+    for (const item of arr) {
+      const text = String(item && item.text || '').trim();
+      const answer = String(item && item.answer || '').trim();
+      const category = String(item && item.category || 'Custom').trim() || 'Custom';
+      const blanks = (text.match(/___/g) || []).length;
+      if (!text || !answer || blanks !== 1 || answer.includes('___')) { skipped++; continue; }
+      const key = norm(text) + '|' + norm(answer);
+      if (seen.has(key)) { skipped++; continue; }
+      seen.add(key);
+      customQ.push({
+        id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        category, text, answer
+      });
+      added++;
+    }
+    saveCustom();
+    renderEditor();
+    if (added) sfx.ok();
+    alert(`Imported ${added} question${added === 1 ? '' : 's'}${skipped ? ` · skipped ${skipped}` : ''}.`);
+  } catch {
+    sfx.err();
+    alert('That file could not be read as JSON.');
+  }
+});
+
+$('exportBtn').addEventListener('click', () => {
+  const data = allQuestions().map(q => ({ category: q.category, text: q.text, answer: q.answer }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fibble-questions.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  sfx.click();
+});
+
+/* ============================================================
+   SETUP
+   ============================================================ */
+function resetSetupDraft() {
+  setupDraft.names = G.players.length ? G.players.map(p => p.name) : ['', ''];
+  while (setupDraft.names.length < 2) setupDraft.names.push('');
+  setupDraft.rounds = 8;
+  setupDraft.doubleFinal = true;
+  $('doubleFinal').checked = true;
+  document.querySelectorAll('#roundSeg button').forEach(b => b.classList.toggle('active', +b.dataset.rounds === 8));
+  $('setupErr').textContent = '';
+  renderPlayers();
+}
+
+function renderPlayers() {
+  $('playerList').innerHTML = setupDraft.names.map((n, i) => `
+    <div class="prow">
+      <span class="pnum">${i + 1}</span>
+      <input class="input" data-i="${i}" type="text" maxlength="16" placeholder="Player name" value="${esc(n)}" autocomplete="off" autocapitalize="words" />
+      <button type="button" class="pdel" data-i="${i}" aria-label="Remove player" ${setupDraft.names.length <= 2 ? 'disabled style="opacity:.35"' : ''}>×</button>
+    </div>`).join('');
+  $('addPlayerBtn').disabled = setupDraft.names.length >= 8;
+}
+
+$('playerList').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-i]');
+  if (!inp) return;
+  setupDraft.names[+inp.dataset.i] = inp.value;
+});
+
+$('playerList').addEventListener('click', e => {
+  const btn = e.target.closest('.pdel');
+  if (!btn || setupDraft.names.length <= 2) return;
+  setupDraft.names.splice(+btn.dataset.i, 1);
+  renderPlayers();
+  sfx.click();
+});
+
+$('addPlayerBtn').addEventListener('click', () => {
+  if (setupDraft.names.length >= 8) return;
+  setupDraft.names.push('');
+  renderPlayers();
+  const inputs = $('playerList').querySelectorAll('input');
+  inputs[inputs.length - 1].focus();
+  sfx.click();
+});
+
+document.querySelectorAll('#roundSeg button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setupDraft.rounds = +btn.dataset.rounds;
+    document.querySelectorAll('#roundSeg button').forEach(b => b.classList.toggle('active', b === btn));
+    sfx.click();
+  });
+});
+
+$('doubleFinal').addEventListener('change', e => {
+  setupDraft.doubleFinal = e.target.checked;
+  sfx.click();
+});
+
+$('startBtn').addEventListener('click', () => {
+  const names = setupDraft.names.map(n => n.trim());
+  const err = $('setupErr');
+  if (names.some(n => !n)) { err.textContent = 'Every player needs a name.'; sfx.err(); return; }
+  const lower = names.map(n => n.toLowerCase());
+  if (new Set(lower).size !== lower.length) { err.textContent = 'Players need different names.'; sfx.err(); return; }
+  err.textContent = '';
+  const rounds = Math.min(setupDraft.rounds, allQuestions().length);
+  G.players = names.map((n, i) => ({ id: 'p' + i, name: n, score: 0 }));
+  G.deck = shuffle(allQuestions()).slice(0, rounds);
+  G.r = 0;
+  G.doubleFinal = setupDraft.doubleFinal;
+  startRound();
+});
+
+/* ============================================================
+   GAME FLOW
+   ============================================================ */
+function startRound() {
+  G.lies = [];
+  G.votes = [];
+  G.writeIdx = 0;
+  G.voteIdx = 0;
+  G.currentPid = null;
+  G.deltas = {};
+  const q = curQ();
+  $('introRound').textContent = G.r + 1;
+  $('introOf').textContent = 'of ' + G.deck.length;
+  $('introCat').textContent = q.category;
+  renderHud();
+  go('scr-intro');
+}
+
+$('introGo').addEventListener('click', () => { sfx.click(); beginWrite(); });
+
+/* ---------- writing lies ---------- */
+function beginWrite() {
+  G.writeIdx = 0;
+  promptWrite();
+}
+
+function promptWrite() {
+  const p = G.players[G.writeIdx];
+  G.currentPid = p.id;
+  renderHud();
+  $('passEyebrow').textContent = 'Pass the device to';
+  $('passAv').textContent = initials(p.name);
+  $('passAv').style.background = `linear-gradient(135deg, ${avColor(playerIndex(p.id))}, var(--purple))`;
+  $('passName').textContent = p.name;
+  $('passSub').textContent = G.writeIdx === 0
+    ? 'Type a lie that sounds true. Nobody else should see your answer.'
+    : 'Your answer is locked in 🔒 — hand the device over without peeking.';
+  $('passReady').textContent = "I'm ready 👆";
+  $('passReady').onclick = () => { sfx.click(); formWrite(); };
+  go('scr-pass');
+}
+
+function formWrite() {
+  const p = G.players[G.writeIdx];
+  const q = curQ();
+  $('writeCat').textContent = q.category;
+  $('writeStmt').innerHTML = stmtHTML(q.text);
+  $('writeTurn').textContent = p.name + ' — invent a lie';
+  $('lieInput').value = '';
+  $('lieErr').textContent = '';
+  go('scr-write');
+  setTimeout(() => $('lieInput').focus(), 60);
+}
+
+$('writeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const val = $('lieInput').value.trim();
+  const q = curQ();
+  const fail = msg => {
+    $('lieErr').textContent = msg;
+    $('lieInput').classList.add('shake');
+    setTimeout(() => $('lieInput').classList.remove('shake'), 450);
+    $('lieInput').focus();
+    sfx.err();
+  };
+  if (!val) return fail('Type something first — make it believable!');
+  if (norm(val) === norm(q.answer)) return fail("Careful — that's the actual truth! Invent a lie.");
+  if (G.lies.some(l => norm(l.text) === norm(val))) return fail('Someone already wrote that! Try another lie.');
+
+  G.lies.push({ pid: G.players[G.writeIdx].id, text: val });
+  sfx.ok();
+  G.writeIdx++;
+  if (G.writeIdx < G.players.length) {
+    promptWrite();
+  } else {
+    showInter('All lies are in! 🗳️', 'Now everyone gets to vote for the answer they think is true.', 'Start voting →', beginVote);
+  }
+});
+
+/* ---------- interstitial ---------- */
+let interAction = null;
+function showInter(title, sub, btnLabel, fn) {
+  $('interTitle').textContent = title;
+  $('interSub').textContent = sub;
+  $('interBtn').textContent = btnLabel;
+  interAction = fn;
+  go('scr-inter');
+}
+$('interBtn').addEventListener('click', () => { sfx.click(); if (interAction) interAction(); });
+
+/* ---------- voting ---------- */
+function beginVote() {
+  G.voteIdx = 0;
+  promptVote();
+}
+
+function promptVote() {
+  const p = G.players[G.voteIdx];
+  G.currentPid = p.id;
+  renderHud();
+  $('passEyebrow').textContent = 'Pass the device to';
+  $('passAv').textContent = initials(p.name);
+  $('passAv').style.background = `linear-gradient(135deg, ${avColor(playerIndex(p.id))}, var(--purple))`;
+  $('passName').textContent = p.name;
+  $('passSub').textContent = 'Time to vote. Study the answers — you cannot pick your own lie.';
+  $('passReady').textContent = "I'm ready to vote 🗳️";
+  $('passReady').onclick = () => { sfx.click(); formVote(); };
+  go('scr-pass');
+}
+
+function formVote() {
+  const p = G.players[G.voteIdx];
+  const q = curQ();
+  const opts = shuffle([q.answer, ...G.lies.filter(l => l.pid !== p.id).map(l => l.text)]);
+  $('voteCat').textContent = q.category;
+  $('voteStmt').innerHTML = stmtHTML(q.text);
+  $('voteTurn').textContent = p.name + ' — which one is true?';
+  $('voteOpts').innerHTML = opts.map((t, i) =>
+    `<button type="button" class="opt" data-text="${esc(t)}">
+       <span class="ltr">${String.fromCharCode(65 + i)}</span>
+       <span>${esc(t)}</span>
+     </button>`
+  ).join('');
+  $('voteOpts').querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => castVote(btn.dataset.text));
+  });
+  go('scr-vote');
+}
+
+function castVote(text) {
+  G.votes.push({ pid: G.players[G.voteIdx].id, text });
+  sfx.ok();
+  G.voteIdx++;
+  if (G.voteIdx < G.players.length) {
+    promptVote();
+  } else {
+    revealRound();
+  }
+}
+
+/* ---------- reveal & scoring ---------- */
+function revealRound() {
+  const q = curQ();
+  const mult = (G.doubleFinal && G.r === G.deck.length - 1) ? 2 : 1;
+  const deltas = {};
+  G.players.forEach(p => { deltas[p.id] = 0; });
+  G.votes.forEach(v => { if (v.text === q.answer) deltas[v.pid] += 500 * mult; });
+  G.lies.forEach(l => {
+    const fools = G.votes.filter(v => v.text === l.text && v.pid !== l.pid).length;
+    deltas[l.pid] += 500 * fools * mult;
+  });
+  G.players.forEach(p => { p.score += deltas[p.id]; });
+  G.deltas = deltas;
+
+  $('revCat').textContent = q.category;
+  $('revRound').textContent = 'Round ' + (G.r + 1) + ' of ' + G.deck.length;
+  $('revStmt').innerHTML = stmtHTML(q.text, q.answer);
+
+  const truthVoters = G.votes.filter(v => v.text === q.answer).map(v => playerById(v.pid));
+  const lies = G.lies.map(l => ({
+    ...l,
+    voters: G.votes.filter(v => v.text === l.text).map(v => playerById(v.pid))
+  })).sort((a, b) => b.voters.length - a.voters.length);
+
+  let cards = `<div class="ans truth" style="animation-delay:0ms">
+    <div class="tag truth-tag">✔ The truth</div>
+    <div class="ans-text">${esc(q.answer)}</div>
+    <div class="ans-meta">${truthVoters.length
+      ? `Found by <span class="voter">${truthVoters.map(p => esc(p.name)).join(', ')}</span> · <span class="pts">+${500 * mult} each</span>`
+      : 'Nobody found the truth!'}</div>
+  </div>`;
+
+  cards += lies.map((l, i) => {
+    const author = playerById(l.pid);
+    const pts = 500 * l.voters.length * mult;
+    return `<div class="ans" style="animation-delay:${(i + 1) * 90}ms">
+      <div class="tag lie-tag">Lie by ${esc(author.name)}</div>
+      <div class="ans-text">${esc(l.text)}</div>
+      <div class="ans-meta">${l.voters.length
+        ? `Fooled <span class="voter">${l.voters.map(p => esc(p.name)).join(', ')}</span> · <span class="pts">+${pts}</span>`
+        : 'Nobody was fooled 😬'}</div>
+    </div>`;
+  }).join('');
+  $('revCards').innerHTML = cards;
+
+  $('revScores').innerHTML = G.players.map((p, i) => {
+    const found = G.votes.find(v => v.pid === p.id && v.text === q.answer);
+    const lie = G.lies.find(l => l.pid === p.id);
+    const fools = lie ? G.votes.filter(v => v.text === lie.text && v.pid !== p.id).length : 0;
+    const parts = [];
+    if (found) parts.push('found the truth');
+    if (fools) parts.push(`fooled ${fools}`);
+    const why = parts.length ? parts.join(' + ') : 'fooled nobody';
+    const d = deltas[p.id];
+    return `<div class="srow">
+      <span class="dot" style="background:${avColor(i)}">${esc(initials(p.name))}</span>
+      <span class="nm">${esc(p.name)}</span>
+      <span class="why">${why}</span>
+      <span class="delta ${d ? '' : 'zero'}">+${d}</span>
+      <span class="tot">${p.score}</span>
+    </div>`;
+  }).join('');
+
+  $('revNext').textContent = (G.r >= G.deck.length - 1) ? 'See final results 🏆' : 'Next round →';
+  renderHud();
+  go('scr-reveal');
+  setTimeout(() => sfx.truth(), 300);
+}
+
+$('revNext').addEventListener('click', () => {
+  sfx.click();
+  if (G.r >= G.deck.length - 1) {
+    showFinal();
+  } else {
+    G.r++;
+    startRound();
+  }
+});
+
+/* ---------- final results ---------- */
+function showFinal() {
+  const ranked = G.players.slice().sort((a, b) => b.score - a.score);
+  const top = ranked[0];
+  const tied = ranked.filter(p => p.score === top.score).length > 1;
+  $('finalTitle').textContent = tied ? "🤝 It's a tie!" : '🏆 We have a winner!';
+  $('finalSub').textContent = tied
+    ? `${ranked.filter(p => p.score === top.score).map(p => p.name).join(' & ')} share the crown with ${top.score} points.`
+    : `${top.name} wins with ${top.score} points.`;
+
+  const order = [];
+  if (ranked[1]) order.push({ p: ranked[1], cls: 'second', medal: '🥈' });
+  order.push({ p: ranked[0], cls: 'first', medal: '🥇' });
+  if (ranked[2]) order.push({ p: ranked[2], cls: 'third', medal: '🥉' });
+  $('podium').innerHTML = order.map((o, i) => `
+    <div class="pod ${o.cls}" style="animation-delay:${i * 120}ms">
+      <div class="pmedal">${o.medal}</div>
+      <div class="pname">${esc(o.p.name)}</div>
+      <div class="pscore">${o.p.score} pts</div>
+    </div>`).join('');
+
+  $('finalList').innerHTML = ranked.map((p, i) => `
+    <div class="srow">
+      <span class="rank">${i + 1}</span>
+      <span class="dot" style="background:${avColor(playerIndex(p.id))}">${esc(initials(p.name))}</span>
+      <span class="nm">${esc(p.name)}</span>
+      <span class="tot" style="min-width:auto">${p.score} pts</span>
+    </div>`).join('');
+
+  go('scr-final');
+  confetti();
+  setTimeout(() => sfx.win(), 200);
+}
+
+$('againBtn').addEventListener('click', () => {
+  sfx.click();
+  G.players.forEach(p => { p.score = 0; });
+  G.deck = shuffle(allQuestions()).slice(0, G.deck.length);
+  G.r = 0;
+  startRound();
+});
+
+$('menuBtn').addEventListener('click', () => {
+  sfx.click();
+  G.players = [];
+  $('confetti').innerHTML = '';
+  go('scr-menu');
+});
+
+/* ---------- confetti ---------- */
+function confetti() {
+  const wrap = $('confetti');
+  wrap.innerHTML = '';
+  const colors = ['#ff4d8d', '#22d3ee', '#fbbf24', '#34d399', '#a78bfa', '#ff9f43'];
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement('i');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random() * 1.6) + 's';
+    s.style.animationDuration = (2.4 + Math.random() * 2.2) + 's';
+    wrap.appendChild(s);
+  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 6500);
+}
+
+/* ---------- mute ---------- */
+function updateMute() {
+  $('muteBtn').textContent = muted ? '🔇' : '🔊';
+  $('muteBtn').setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+}
+$('muteBtn').addEventListener('click', () => {
+  muted = !muted;
+  try { localStorage.setItem(LS_MUTED, muted ? '1' : '0'); } catch {}
+  updateMute();
+  if (!muted) sfx.click();
+});
+
+/* ---------- init ---------- */
+updateMute();
+updateMenuCount();
+renderPlayers();
+</script>
+<script>
+/* ============================================================
+   ONLINE MULTIPLAYER
+   Devices sync through a free public MQTT relay over WebSocket.
+   No account, no backend, no install.
+   ============================================================ */
+
+const BROKERS = {
+  S: { url: 'wss://public.cloud.shiftr.io', name: 'Shiftr', username: 'public', password: 'public' },
+  H: { url: 'wss://broker.hivemq.com:8884/mqtt', name: 'HiveMQ' },
+  E: { url: 'wss://broker.emqx.io:8084/mqtt', name: 'EMQX' }
+};
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const MAX_ONLINE = 8;
+
+const NET = { client: null, room: null, key: null, role: null, pid: null, name: '', status: 'offline' };
+const O = {
+  room: '', key: '', players: [], rounds: 8, doubleFinal: true,
+  hostPlaying: false, hostPid: null, phase: 'lobby', r: 0, deck: [],
+  answer: '', category: '', statement: '', lies: [], votes: [], deltas: {}, options: {}
+};
+const P = { state: null, prompt: null, result: null, final: null, waitMsg: '', pending: false, lastRound: -1, joinPending: false };
+
+let mqttLoader = null;
+let joinResolve = null;
+let joinWatch = null;
+let hostSetupRounds = 8;
+
+const randStr = n => {
+  let s = '';
+  for (let i = 0; i < n; i++) s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  return s;
+};
+const randId = () => 'p' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-3);
+
+const topicBase = () => 'fibble/v1/' + NET.room;
+const topicIn = () => topicBase() + '/in';
+const topicState = () => topicBase() + '/state';
+const topicTo = pid => topicBase() + '/to/' + pid;
+
+/* ---------- load mqtt.js on demand (two CDNs) ---------- */
+function loadMqttLib() {
+  if (window.mqtt) return Promise.resolve();
+  if (mqttLoader) return mqttLoader;
+  mqttLoader = new Promise((resolve, reject) => {
+    const urls = [
+      'https://cdn.jsdelivr.net/npm/mqtt@4.3.7/dist/mqtt.min.js',
+      'https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js'
+    ];
+    let i = 0;
+    const attempt = () => {
+      if (i >= urls.length) {
+        mqttLoader = null;
+        reject(new Error('Could not load the connection library. Check your internet connection.'));
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.async = true;
+      s.onload = () => (window.mqtt ? resolve() : attempt());
+      s.onerror = attempt;
+      document.head.appendChild(s);
+    };
+    attempt();
+  });
+  return mqttLoader;
+}
+
+function connectOne(key) {
+  return new Promise((resolve, reject) => {
+    const cfg = BROKERS[key];
+    if (!cfg) return reject(new Error('Unknown relay.'));
+    let settled = false;
+    let client;
+    const done = err => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (err) {
+        try { client.end(true); } catch (e) {}
+        reject(err);
+      } else resolve(client);
+    };
+    try {
+      client = window.mqtt.connect(cfg.url, {
+        clientId: 'fibble_' + Math.random().toString(16).slice(2, 12),
+        clean: true,
+        keepalive: 30,
+        reconnectPeriod: 3000,
+        connectTimeout: 9000,
+        protocolVersion: 4,
+        username: cfg.username,
+        password: cfg.password
+      });
+    } catch (e) {
+      return reject(e);
+    }
+    const timer = setTimeout(() => done(new Error('timeout')), 11000);
+    client.once('connect', () => done());
+    client.once('error', e => done(e));
+  });
+}
+
+function setNetStatus(s) {
+  NET.status = s;
+  const line = $('netLine');
+  if (line) {
+    const on = s === 'Connected' ? 'on' : (s === 'Disconnected' ? 'off' : '');
+    line.innerHTML = '<span class="netdot ' + on + '"></span>' + esc(s);
+  }
+  const dot = $('lbNet');
+  if (dot) {
+    dot.className = 'netdot ' + (s === 'Connected' ? 'on' : (s === 'Disconnected' ? 'off' : ''));
+    dot.title = s;
+  }
+}
+
+function attachClient(client) {
+  client.on('connect', () => {
+    setNetStatus('Connected');
+    if (NET.role === 'host' && O.room) setTimeout(pubState, 300);
+    if (NET.role === 'player' && NET.room) {
+      setTimeout(() => pub(topicIn(), { t: 'join', pid: NET.pid, name: NET.name }), 400);
+    }
+  });
+  client.on('reconnect', () => setNetStatus('Reconnecting…'));
+  client.on('close', () => setNetStatus('Disconnected'));
+  client.on('error', () => {});
+  client.on('message', (topic, payload) => {
+    let msg = null;
+    try { msg = JSON.parse(payload.toString()); } catch (e) { return; }
+    if (!msg || !msg.t) return;
+    if (NET.role === 'host') hostInbox(topic, msg);
+    else if (NET.role === 'player') playerInbox(topic, msg);
+  });
+}
+
+function sub(topic) {
+  return new Promise(resolve => {
+    if (!NET.client) return resolve(false);
+    NET.client.subscribe(topic, { qos: 0 }, err => resolve(!err));
+  });
+}
+
+function pub(topic, obj, retain) {
+  const c = NET.client;
+  if (!c || !c.connected) return false;
+  try {
+    c.publish(topic, typeof obj === 'string' ? obj : JSON.stringify(obj), { qos: 0, retain: !!retain });
+    return true;
+  } catch (e) { return false; }
+}
+function toPlayer(pid, obj) { if (pid && pid !== O.hostPid) pub(topicTo(pid), obj, false); }
+function pubState() { if (NET.role === 'host') pub(topicState(), publicState(), true); }
+
+/* ---------- create / join ---------- */
+async function createRoom(cfg) {
+  await loadMqttLib();
+  setNetStatus('Connecting…');
+  let lastErr = null;
+  for (const key of Object.keys(BROKERS)) {
+    let client = null;
+    try {
+      client = await connectOne(key);
+      NET.client = client;
+      NET.key = key;
+      NET.role = 'host';
+      NET.room = key + randStr(5);
+      attachClient(client);
+      // attachClient ran after the first CONNACK, so make the first connect visible too.
+      setNetStatus('Connected');
+      await sub(topicIn());
+      O.room = NET.room;
+      O.key = key;
+      O.phase = 'lobby';
+      O.rounds = cfg.rounds;
+      O.doubleFinal = cfg.doubleFinal;
+      O.hostPlaying = cfg.playing;
+      O.hostPid = cfg.playing ? randId() : null;
+      O.players = cfg.playing
+        ? [{ id: O.hostPid, name: cfg.name, score: 0, online: true, sub: false, voted: false, skipped: false, host: true }]
+        : [];
+      O.deck = []; O.r = 0; O.lies = []; O.votes = []; O.deltas = {}; O.options = {};
+      pubState();
+      return true;
+    } catch (e) {
+      lastErr = e;
+      try { if (client) client.end(true); } catch (x) {}
+    }
+  }
+  throw lastErr || new Error('Could not reach a relay.');
+}
+
+async function joinRoom(code, name) {
+  await loadMqttLib();
+  setNetStatus('Connecting…');
+  const key = code[0];
+  const client = await connectOne(key);
+  NET.client = client;
+  NET.key = key;
+  NET.role = 'player';
+  NET.room = code;
+  NET.pid = sessionStorage.getItem('fibble.pid.' + code) || randId();
+  NET.name = name;
+  P.joinPending = true;
+  try { sessionStorage.setItem('fibble.pid.' + code, NET.pid); } catch (e) {}
+  attachClient(client);
+  setNetStatus('Connected');
+  await sub(topicState());
+  await sub(topicTo(NET.pid));
+  P.state = null; P.prompt = null; P.result = null; P.final = null;
+  P.waitMsg = ''; P.pending = false; P.lastRound = -1;
+  const welcomed = new Promise(resolve => {
+    joinResolve = resolve;
+    joinWatch = setTimeout(() => { joinResolve = null; resolve(false); }, 8000);
+  });
+  pub(topicIn(), { t: 'join', pid: NET.pid, name: name, ver: 1 });
+  const ok = await welcomed;
+  P.joinPending = false;
+  if (ok === 'rejected') throw new Error(P.rejectMsg || 'Could not join that room.');
+  if (!ok) throw new Error('No room answered. Check the code and that the host is online.');
+}
+
+/* ---------- host: public state ---------- */
+function publicState() {
+  return {
+    t: 'state',
+    room: O.room,
+    phase: O.phase,
+    r: O.r,
+    rounds: O.deck.length || O.rounds,
+    category: O.category,
+    statement: O.statement,
+    hostPlaying: O.hostPlaying,
+    hostPid: O.hostPid,
+    players: O.players.map(p => ({
+      id: p.id, name: p.name, score: p.score,
+      online: p.online, sub: !!p.sub, voted: !!p.voted
+    })),
+    reveal: O.phase === 'reveal' ? {
+      answer: O.answer,
+      truthVoters: O.votes.filter(v => v.text === O.answer).map(v => v.pid),
+      lies: O.lies.map(l => ({
+        text: l.text,
+        pid: l.pid,
+        voters: O.votes.filter(v => v.text === l.text).map(v => v.pid)
+      })).sort((a, b) => b.voters.length - a.voters.length)
+    } : null,
+    deltas: O.phase === 'reveal' ? O.deltas : null,
+    final: O.phase === 'final'
+      ? O.players.slice().sort((a, b) => b.score - a.score).map(p => ({ id: p.id, name: p.name, score: p.score }))
+      : null
+  };
+}
+
+function playerName(pid) {
+  const p = O.players.find(x => x.id === pid);
+  return p ? p.name : 'Someone';
+}
+const hostPlayer = () => O.players.find(p => p.id === O.hostPid) || null;
+
+/* ---------- host: inbox ---------- */
+function hostInbox(topic, msg) {
+  if (topic !== topicIn()) return;
+  const player = msg.pid ? O.players.find(p => p.id === msg.pid) : null;
+  if (msg.t === 'join') return hostJoin(msg);
+  if (!player) return;
+  if (msg.t === 'lie') {
+    if (O.phase !== 'write') return;
+    const err = hostLie(player, msg.text);
+    if (err) toPlayer(player.id, { t: 'err', kind: 'lie', message: err });
+    else sfx.ok();
+    return;
+  }
+  if (msg.t === 'vote') {
+    if (O.phase !== 'vote') return;
+    hostVote(player, msg.choice);
+    return;
+  }
+  if (msg.t === 'bye') return hostBye(player);
+  if (msg.t === 'ping') {
+    player.online = true;
+    toPlayer(player.id, { t: 'pong' });
+  }
+}
+
+function hostJoin(msg) {
+  const name = String(msg.name || '').trim().slice(0, 16) || 'Player';
+  const pid = String(msg.pid || '').trim() || randId();
+  let p = O.players.find(x => x.id === pid);
+  if (!p) {
+    if (O.phase !== 'lobby') {
+      return toPlayer(pid, { t: 'rejected', message: 'This game has already started.' });
+    }
+    if (O.players.length >= MAX_ONLINE) {
+      return toPlayer(pid, { t: 'rejected', message: 'This room is full (8 players).' });
+    }
+    let finalName = name;
+    let n = 2;
+    while (O.players.some(x => x.name.toLowerCase() === finalName.toLowerCase())) finalName = name + ' ' + (n++);
+    p = { id: pid, name: finalName, score: 0, online: true, sub: false, voted: false, skipped: false };
+    O.players.push(p);
+  } else {
+    p.online = true;
+    if (O.phase === 'lobby' && name) p.name = name;
+  }
+  toPlayer(pid, { t: 'welcome', pid: pid, room: O.room, name: p.name, state: publicState() });
+  if (O.phase === 'write' || O.phase === 'vote') resendPrompt(p);
+  pubState();
+  if (O.phase === 'lobby') renderLobby();
+  else renderHost();
+  sfx.ok();
+}
+
+function resendPrompt(p) {
+  if (O.phase === 'write') {
+    if (p.sub) return toPlayer(p.id, { t: 'wait', message: 'Your lie is locked in 🔒. Waiting for the others…' });
+    toPlayer(p.id, { t: 'prompt', kind: 'lie', r: O.r, rounds: O.deck.length, category: O.category, statement: O.statement });
+  } else if (O.phase === 'vote') {
+    if (p.voted) return toPlayer(p.id, { t: 'wait', message: 'Your vote is locked in 🗳️. Waiting for the others…' });
+    toPlayer(p.id, { t: 'prompt', kind: 'vote', r: O.r, rounds: O.deck.length, category: O.category, statement: O.statement, options: O.options[p.id] || [] });
+  }
+}
+
+function hostBye(p) {
+  p.online = false;
+  if (O.phase === 'lobby') O.players = O.players.filter(x => x.id !== p.id);
+  pubState();
+  if (O.phase === 'lobby') renderLobby();
+  else renderHost();
+}
+
+/* ---------- host: game logic ---------- */
+function hostStartGame() {
+  if (O.phase !== 'lobby' || O.players.length < 2) return;
+  O.deck = shuffle(allQuestions()).slice(0, Math.min(O.rounds, allQuestions().length));
+  O.r = 0;
+  O.players.forEach(p => { p.score = 0; p.sub = false; p.voted = false; p.skipped = false; });
+  startHostRound();
+}
+
+function startHostRound() {
+  const q = O.deck[O.r];
+  O.answer = q.answer;
+  O.category = q.category;
+  O.statement = q.text;
+  O.lies = []; O.votes = []; O.deltas = {}; O.options = {};
+  O.phase = 'intro';
+  O.players.forEach(p => { p.sub = false; p.voted = false; p.skipped = false; });
+  pubState();
+  renderHost();
+  go('scr-host');
+}
+
+function hostBeginWrite() {
+  if (O.phase !== 'intro') return;
+  O.phase = 'write';
+  O.lies = [];
+  O.players.forEach(p => { p.sub = false; p.skipped = false; });
+  pubState();
+  O.players.forEach(p => {
+    if (p.id === O.hostPid) return;
+    toPlayer(p.id, { t: 'prompt', kind: 'lie', r: O.r, rounds: O.deck.length, category: O.category, statement: O.statement });
+  });
+  renderHost();
+}
+
+function hostBeginVote() {
+  if (O.phase !== 'write') return;
+  O.phase = 'vote';
+  O.votes = [];
+  O.options = {};
+  O.players.forEach(p => { p.voted = false; p.skipped = false; });
+  O.players.forEach(p => {
+    const opts = shuffle([O.answer, ...O.lies.filter(l => l.pid !== p.id).map(l => l.text)]);
+    O.options[p.id] = opts.map((text, i) => ({ id: 'o' + i, text: text }));
+  });
+  pubState();
+  O.players.forEach(p => {
+    if (p.id === O.hostPid) return;
+    toPlayer(p.id, { t: 'prompt', kind: 'vote', r: O.r, rounds: O.deck.length, category: O.category, statement: O.statement, options: O.options[p.id] });
+  });
+  renderHost();
+}
+
+function hostLie(p, textRaw) {
+  const text = String(textRaw || '').trim().slice(0, 80);
+  if (!p) return 'Player not found.';
+  if (p.sub) return 'You already locked in a lie.';
+  if (!text) return 'Type something first — make it believable!';
+  if (norm(text) === norm(O.answer)) return "Careful — that's the actual truth! Invent a lie.";
+  if (O.lies.some(l => norm(l.text) === norm(text))) return 'Someone already wrote that! Try another lie.';
+  O.lies.push({ pid: p.id, text: text });
+  p.sub = true;
+  toPlayer(p.id, { t: 'wait', message: 'Lie locked in 🔒. Waiting for the others…' });
+  pubState();
+  renderHost();
+  return null;
+}
+
+function hostVote(p, choice) {
+  if (!p || p.voted) return;
+  const opts = O.options[p.id] || [];
+  const opt = opts.find(o => o.id === choice);
+  if (!opt) return;
+  p.voted = true;
+  O.votes.push({ pid: p.id, text: opt.text });
+  toPlayer(p.id, { t: 'wait', message: 'Vote locked in 🗳️. Waiting for the others…' });
+  pubState();
+  renderHost();
+  sfx.ok();
+}
+
+function hostReveal() {
+  if (O.phase !== 'vote') return;
+  O.phase = 'reveal';
+  const mult = (O.doubleFinal && O.r === O.deck.length - 1) ? 2 : 1;
+  const deltas = {};
+  O.players.forEach(p => { deltas[p.id] = 0; });
+  O.votes.forEach(v => { if (v.text === O.answer) deltas[v.pid] += 500 * mult; });
+  O.lies.forEach(l => {
+    const fools = O.votes.filter(v => v.text === l.text && v.pid !== l.pid).length;
+    deltas[l.pid] += 500 * fools * mult;
+  });
+  O.players.forEach(p => { p.score += deltas[p.id] || 0; });
+  O.deltas = deltas;
+  pubState();
+  O.players.forEach(p => {
+    if (p.id === O.hostPid) return;
+    const lie = O.lies.find(l => l.pid === p.id);
+    const fooled = lie ? O.votes.filter(v => v.text === lie.text && v.pid !== p.id).length : 0;
+    const found = O.votes.some(v => v.pid === p.id && v.text === O.answer);
+    toPlayer(p.id, {
+      t: 'result', r: O.r, delta: deltas[p.id] || 0, score: p.score,
+      found: found, fooled: fooled, truth: O.answer, mult: mult
+    });
+  });
+  renderHost();
+  setTimeout(() => sfx.truth(), 250);
+}
+
+function hostNext() {
+  if (O.phase !== 'reveal') return;
+  if (O.r >= O.deck.length - 1) {
+    O.phase = 'final';
+    pubState();
+    broadcastFinal();
+    renderHost();
+    setTimeout(() => sfx.win(), 200);
+    return;
+  }
+  O.r++;
+  startHostRound();
+}
+
+function broadcastFinal() {
+  const ranked = O.players.slice().sort((a, b) => b.score - a.score);
+  const top = ranked[0];
+  const tied = ranked.filter(p => p.score === top.score).length > 1;
+  O.players.forEach(p => {
+    if (p.id === O.hostPid) return;
+    const rank = ranked.findIndex(x => x.id === p.id) + 1;
+    toPlayer(p.id, {
+      t: 'final', rank: rank, total: ranked.length, score: p.score,
+      winner: top.name, tied: tied
+    });
+  });
+}
+
+function hostAgain() {
+  O.players.forEach(p => { p.score = 0; });
+  O.deck = shuffle(allQuestions()).slice(0, Math.min(O.rounds, allQuestions().length));
+  O.r = 0;
+  O.players.forEach(p => { if (p.id !== O.hostPid) toPlayer(p.id, { t: 'reset' }); });
+  startHostRound();
+}
+
+/* ---------- host: rendering ---------- */
+function progressRows(mode) {
+  return O.players.map((p, i) => {
+    const ok = mode === 'write' ? p.sub : p.voted;
+    const st = ok
+      ? '<span class="st ok">✓ in</span>'
+      : (p.online ? '<span class="st">…</span>' : '<span class="st off">offline</span>');
+    return '<div class="pbar"><span class="dot" style="background:' + avColor(i) + '">' + esc(initials(p.name)) +
+      '</span><span class="nm">' + esc(p.name) + '</span>' + st + '</div>';
+  }).join('');
+}
+
+function renderHost() {
+  if (NET.role !== 'host') return;
+  if (O.phase === 'lobby') { renderLobby(); return; }
+
+  $('hbRound').textContent = 'Round ' + (O.r + 1) + ' / ' + O.deck.length;
+  $('hbCat').textContent = O.category || '';
+  $('hbCat').hidden = !O.category;
+  $('hbRoom').textContent = O.room;
+  const b = $('hostBody');
+
+  if (O.phase === 'intro') {
+    b.innerHTML =
+      '<div class="center mt8">' +
+        '<div class="eyebrow">Round ' + (O.r + 1) + ' of ' + O.deck.length + '</div>' +
+        '<div class="round-num">' + (O.r + 1) + '</div>' +
+        '<div class="chiprow"><span class="chip accent">' + esc(O.category) + '</span></div>' +
+      '</div>' +
+      '<div class="statement">' + stmtHTML(O.statement) + '</div>' +
+      '<p class="tagline">Everyone writes a lie for the blank. Then you all vote for the truth.</p>' +
+      '<button class="btn primary mt16" data-act="beginWrite">Start writing →</button>';
+    go('scr-host');
+    return;
+  }
+
+  if (O.phase === 'write') {
+    const done = O.players.filter(p => p.sub).length;
+    const all = O.players.every(p => p.sub || !p.online);
+    const me = hostPlayer();
+    let you = '';
+    if (me && !me.sub) {
+      you = '<form id="hbLieForm" class="host-you" autocomplete="off">' +
+        '<div class="eyebrow">Your lie</div>' +
+        '<div class="field" style="margin-top:8px"><input class="input big" id="hbLie" maxlength="80" placeholder="Type something believable…" /></div>' +
+        '<div class="err" id="hbLieErr"></div>' +
+        '<button class="btn primary" type="submit">Lock in my lie 🔒</button>' +
+        '</form>';
+    } else if (me) {
+      you = '<p class="tagline center mt16">Your lie is locked in ✓</p>';
+    }
+    b.innerHTML =
+      '<div class="statement small">' + stmtHTML(O.statement) + '</div>' +
+      '<div class="eyebrow mt20">Lies in — ' + done + ' / ' + O.players.length + '</div>' +
+      '<div class="plist">' + progressRows('write') + '</div>' +
+      you +
+      '<button class="btn primary mt16" data-act="beginVote"' + (all ? '' : ' disabled') + '>Start voting →</button>' +
+      (all ? '' : '<button class="btn ghost mt8" data-act="beginVote">Continue without waiting</button>');
+    go('scr-host');
+    return;
+  }
+
+  if (O.phase === 'vote') {
+    const done = O.players.filter(p => p.voted).length;
+    const all = O.players.every(p => p.voted || !p.online);
+    const me = hostPlayer();
+    let you = '';
+    if (me && !me.voted) {
+      const opts = O.options[me.id] || [];
+      you = '<div class="host-you"><div class="eyebrow">Your vote — which one is true?</div>' +
+        '<div class="opts" style="margin-top:10px">' +
+        opts.map((o, i) => '<button type="button" class="opt" data-act="hostVote" data-id="' + o.id + '">' +
+          '<span class="ltr">' + String.fromCharCode(65 + i) + '</span><span>' + esc(o.text) + '</span></button>').join('') +
+        '</div></div>';
+    } else if (me) {
+      you = '<p class="tagline center mt16">Your vote is locked in ✓</p>';
+    }
+    b.innerHTML =
+      '<div class="statement small">' + stmtHTML(O.statement) + '</div>' +
+      '<div class="eyebrow mt20">Votes in — ' + done + ' / ' + O.players.length + '</div>' +
+      '<div class="plist">' + progressRows('vote') + '</div>' +
+      you +
+      '<button class="btn primary mt16" data-act="reveal"' + (all ? '' : ' disabled') + '>Reveal answers →</button>' +
+      (all ? '' : '<button class="btn ghost mt8" data-act="reveal">Reveal without waiting</button>');
+    go('scr-host');
+    return;
+  }
+
+  if (O.phase === 'reveal') {
+    const mult = (O.doubleFinal && O.r === O.deck.length - 1) ? 2 : 1;
+    const truthVoters = O.votes.filter(v => v.text === O.answer).map(v => playerName(v.pid));
+    const lies = O.lies.map(l => ({
+      text: l.text, pid: l.pid,
+      voters: O.votes.filter(v => v.text === l.text).map(v => playerName(v.pid))
+    })).sort((a, b) => b.voters.length - a.voters.length);
+
+    let cards = '<div class="ans truth" style="animation-delay:0ms">' +
+      '<div class="tag truth-tag">✔ The truth</div>' +
+      '<div class="ans-text">' + esc(O.answer) + '</div>' +
+      '<div class="ans-meta">' + (truthVoters.length
+        ? 'Found by <span class="voter">' + truthVoters.map(esc).join(', ') + '</span> · <span class="pts">+' + (500 * mult) + ' each</span>'
+        : 'Nobody found the truth!') + '</div></div>';
+
+    cards += lies.map((l, i) =>
+      '<div class="ans" style="animation-delay:' + ((i + 1) * 80) + 'ms">' +
+        '<div class="tag lie-tag">Lie by ' + esc(playerName(l.pid)) + '</div>' +
+        '<div class="ans-text">' + esc(l.text) + '</div>' +
+        '<div class="ans-meta">' + (l.voters.length
+          ? 'Fooled <span class="voter">' + l.voters.map(esc).join(', ') + '</span> · <span class="pts">+' + (500 * l.voters.length * mult) + '</span>'
+          : 'Nobody was fooled 😬') + '</div></div>').join('');
+
+    const rows = O.players.map((p, i) => {
+      const d = O.deltas[p.id] || 0;
+      return '<div class="srow">' +
+        '<span class="dot" style="background:' + avColor(i) + '">' + esc(initials(p.name)) + '</span>' +
+        '<span class="nm">' + esc(p.name) + '</span>' +
+        '<span class="delta ' + (d ? '' : 'zero') + '">+' + d + '</span>' +
+        '<span class="tot">' + p.score + '</span></div>';
+    }).join('');
+
+    b.innerHTML =
+      '<div class="chiprow" style="justify-content:flex-start"><span class="chip accent">' + esc(O.category) +
+        '</span><span class="chip">Round ' + (O.r + 1) + ' of ' + O.deck.length + '</span></div>' +
+      '<div class="statement">' + stmtHTML(O.statement, O.answer) + '</div>' +
+      '<div class="eyebrow mt20">The answers</div>' +
+      '<div class="mt8">' + cards + '</div>' +
+      '<div class="eyebrow mt24">This round</div>' +
+      '<div class="scores">' + rows + '</div>' +
+      '<button class="btn primary mt24" data-act="next">' +
+        (O.r >= O.deck.length - 1 ? 'Final results 🏆' : 'Next round →') + '</button>';
+    go('scr-host');
+    return;
+  }
+
+  if (O.phase === 'final') {
+    const ranked = O.players.slice().sort((a, b) => b.score - a.score);
+    const top = ranked[0];
+    const tied = ranked.filter(p => p.score === top.score).length > 1;
+    const order = [];
+    if (ranked[1]) order.push({ p: ranked[1], cls: 'second', medal: '🥈' });
+    order.push({ p: ranked[0], cls: 'first', medal: '🥇' });
+    if (ranked[2]) order.push({ p: ranked[2], cls: 'third', medal: '🥉' });
+
+    b.innerHTML =
+      '<div class="center"><div class="eyebrow">Final results</div>' +
+      '<div class="big-title mt8">' + (tied ? "🤝 It's a tie!" : '🏆 We have a winner!') + '</div>' +
+      '<p class="tagline">' + (tied
+        ? ranked.filter(p => p.score === top.score).map(p => esc(p.name)).join(' & ') + ' share the crown with ' + top.score + ' points.'
+        : esc(top.name) + ' wins with ' + top.score + ' points.') + '</p></div>' +
+      '<div class="podium">' + order.map((o, i) =>
+        '<div class="pod ' + o.cls + '" style="animation-delay:' + (i * 120) + 'ms">' +
+          '<div class="pmedal">' + o.medal + '</div>' +
+          '<div class="pname">' + esc(o.p.name) + '</div>' +
+          '<div class="pscore">' + o.p.score + ' pts</div></div>').join('') + '</div>' +
+      '<div class="final-list">' + ranked.map((p, i) =>
+        '<div class="srow"><span class="rank">' + (i + 1) + '</span>' +
+        '<span class="dot" style="background:' + avColor(i) + '">' + esc(initials(p.name)) + '</span>' +
+        '<span class="nm">' + esc(p.name) + '</span>' +
+        '<span class="tot" style="min-width:auto">' + p.score + ' pts</span></div>').join('') + '</div>' +
+      '<div class="rowline mt24"><button class="btn primary" data-act="again">Play again</button>' +
+      '<button class="btn ghost" data-act="close">Close room</button></div>';
+    go('scr-host');
+    confetti();
+  }
+}
+
+/* ---------- lobby (shared) ---------- */
+function currentState() { return NET.role === 'host' ? publicState() : P.state; }
+
+function inviteUrl() {
+  if (location.protocol === 'file:') return '';
+  const room = NET.room || O.room || '';
+  if (!room) return '';
+  return location.href.split('#')[0] + '#join=' + room;
+}
+
+function renderLobby() {
+  const st = currentState();
+  if (!st) return;
+  const room = st.room || NET.room || '';
+  $('lbCode').textContent = room;
+  $('lbCount').textContent = '(' + st.players.length + '/' + MAX_ONLINE + ')';
+  $('lbPlayers').innerHTML = st.players.map((p, i) =>
+    '<div class="lobby-item">' +
+      '<span class="dot" style="background:' + avColor(i) + '">' + esc(initials(p.name)) + '</span>' +
+      '<span class="nm">' + esc(p.name) + '</span>' +
+      (p.id === st.hostPid ? '<span class="tag host">Host</span>' : '') +
+      (p.online === false ? '<span class="off">offline</span>' : '') +
+    '</div>').join('') || '<p class="tagline">No players yet.</p>';
+
+  const isHost = NET.role === 'host';
+  $('lbStart').hidden = !isHost;
+  $('lbStart').disabled = st.players.length < 2;
+  $('lbStart').textContent = st.players.length < 2 ? 'Need 2 players…' : 'Start game →';
+  $('lbWait').hidden = isHost;
+  $('lbHint').textContent = isHost
+    ? (st.players.length < 2 ? 'Waiting for at least one more player…' : 'Everyone in? Start the game.')
+    : 'Waiting for the host to start…';
+  const url = inviteUrl();
+  $('lbCopy').hidden = !url;
+  $('lbCopy').dataset.url = url;
+}
+
+/* ---------- player: inbox ---------- */
+function playerInbox(topic, msg) {
+  const base = topicBase();
+  if (topic === base + '/state') {
+    P.state = msg;
+    // Until the host confirms the join, keep the join screen up: a rejection
+    // (game already started / room full) has to stay visible there.
+    if (P.joinPending) return;
+    if (P.lastRound !== msg.r || msg.phase === 'lobby') {
+      if (msg.phase === 'lobby') {
+        P.prompt = null; P.result = null; P.final = null; P.waitMsg = ''; P.lastRound = -1;
+      } else if (P.lastRound !== msg.r) {
+        P.prompt = null; P.result = null; P.waitMsg = ''; P.lastRound = msg.r;
+      }
+    }
+    if (msg.phase === 'lobby') { go('scr-lobby'); renderLobby(); }
+    else renderPlayerState();
+    return;
+  }
+  if (topic !== base + '/to/' + NET.pid) return;
+
+  if (msg.t === 'welcome') {
+    NET.name = msg.name || NET.name;
+    P.state = msg.state;
+    P.lastRound = msg.state && msg.state.phase !== 'lobby' ? msg.state.r : -1;
+    if (joinResolve) {
+      const r = joinResolve;
+      joinResolve = null;
+      clearTimeout(joinWatch);
+      r(true);
+    } else afterWelcome();
+    return;
+  }
+  if (msg.t === 'rejected') {
+    P.rejectMsg = msg.message || 'Could not join.';
+    if (joinResolve) {
+      const r = joinResolve;
+      joinResolve = null;
+      clearTimeout(joinWatch);
+      r('rejected');
+    } else {
+      alert(P.rejectMsg);
+      leaveOnline();
+    }
+    return;
+  }
+  if (msg.t === 'prompt') {
+    P.prompt = msg;
+    P.waitMsg = '';
+    P.pending = false;
+    P.result = null;
+    renderPlayerPrompt();
+    return;
+  }
+  if (msg.t === 'wait') {
+    P.waitMsg = msg.message || 'Waiting…';
+    P.pending = false;
+    renderPlayerWait();
+    return;
+  }
+  if (msg.t === 'err') {
+    P.pending = false;
+    if (msg.kind === 'lie') {
+      const el = $('plErr');
+      if (el) el.textContent = msg.message || 'Try another lie.';
+      const btn = document.querySelector('#plLieForm button[type="submit"]');
+      if (btn) btn.disabled = false;
+      const inp = $('plLie');
+      if (inp) { inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 450); inp.focus(); }
+    } else {
+      document.querySelectorAll('#playerBody .opt').forEach(b => { b.disabled = false; b.classList.remove('picked'); });
+    }
+    sfx.err();
+    return;
+  }
+  if (msg.t === 'result') {
+    P.result = msg;
+    P.waitMsg = '';
+    P.pending = false;
+    renderPlayerResult();
+    return;
+  }
+  if (msg.t === 'final') {
+    P.final = msg;
+    P.waitMsg = '';
+    P.pending = false;
+    renderPlayerFinal();
+    return;
+  }
+  if (msg.t === 'reset') {
+    P.final = null; P.result = null; P.prompt = null; P.waitMsg = '';
+    renderPlayerWait('New game starting…');
+    return;
+  }
+  if (msg.t === 'closed') {
+    P.state = null;
+    alert('The host closed the room.');
+    leaveOnline();
+    return;
+  }
+}
+
+function afterWelcome() {
+  if (P.state && P.state.phase === 'lobby') { go('scr-lobby'); renderLobby(); }
+  else renderPlayerState();
+}
+
+function playerHeader() {
+  const st = P.state || {};
+  $('pbRound').textContent = st.phase === 'lobby' || !st.phase ? 'Lobby' : 'Round ' + ((st.r || 0) + 1) + ' / ' + st.rounds;
+  const me = (st.players || []).find(p => p.id === NET.pid);
+  $('pbScore').textContent = (me ? me.score : 0) + ' pts';
+  $('pbRoom').textContent = st.room || NET.room || '';
+}
+
+function renderPlayerState() {
+  const st = P.state;
+  if (!st) return;
+  playerHeader();
+  if (st.phase === 'lobby') { go('scr-lobby'); renderLobby(); return; }
+  if (st.phase === 'intro') {
+    if (!P.waitMsg) renderPlayerWait('Round ' + (st.r + 1) + ' of ' + st.rounds + ' — get ready…');
+    return;
+  }
+  if (st.phase === 'write') {
+    if (!P.prompt && !P.waitMsg) renderPlayerWait('Waiting for the question…');
+    return;
+  }
+  if (st.phase === 'vote') {
+    if (!P.prompt && !P.waitMsg) renderPlayerWait('Waiting for the vote to start…');
+    return;
+  }
+  if (st.phase === 'reveal') {
+    if (!P.result && !P.waitMsg) renderPlayerWait('Working out the scores…');
+    return;
+  }
+  if (st.phase === 'final') {
+    if (!P.final && !P.waitMsg) renderPlayerWait('Counting the final scores…');
+  }
+}
+
+function renderPlayerWait(msg) {
+  msg = msg || P.waitMsg || 'Waiting…';
+  P.waitMsg = msg;
+  playerHeader();
+  $('playerBody').innerHTML =
+    '<div class="center-wrap" style="min-height:52vh">' +
+      '<div class="spin" style="width:26px;height:26px;border-width:3px"></div>' +
+      '<div class="big-title" style="font-size:23px">' + esc(msg) + '</div>' +
+      '<p class="tagline">The main screen shows the action.</p>' +
+    '</div>';
+  go('scr-player');
+}
+
+function renderPlayerPrompt() {
+  const m = P.prompt;
+  if (!m) return;
+  playerHeader();
+  if (m.kind === 'lie') {
+    $('playerBody').innerHTML =
+      '<div class="chiprow" style="justify-content:flex-start"><span class="chip accent">' + esc(m.category) + '</span></div>' +
+      '<div class="statement">' + stmtHTML(m.statement) + '</div>' +
+      '<p class="tagline">Write a lie that sounds convincing. The real answer is off-limits.</p>' +
+      '<form id="plLieForm" autocomplete="off">' +
+        '<div class="field" style="margin-top:8px">' +
+          '<input class="input big" id="plLie" maxlength="80" placeholder="Type something believable…" autocapitalize="sentences" />' +
+        '</div>' +
+        '<div class="err" id="plErr"></div>' +
+        '<button class="btn primary" type="submit">Lock in my lie 🔒</button>' +
+      '</form>';
+    setTimeout(() => { const el = $('plLie'); if (el) el.focus(); }, 80);
+  } else {
+    const opts = m.options || [];
+    $('playerBody').innerHTML =
+      '<div class="chiprow" style="justify-content:flex-start"><span class="chip accent">' + esc(m.category) + '</span></div>' +
+      '<div class="statement small">' + stmtHTML(m.statement) + '</div>' +
+      '<p class="tagline">Which one is the truth? You can\'t pick your own lie.</p>' +
+      '<div class="opts">' + opts.map((o, i) =>
+        '<button type="button" class="opt" data-id="' + o.id + '">' +
+          '<span class="ltr">' + String.fromCharCode(65 + i) + '</span><span>' + esc(o.text) + '</span></button>').join('') +
+      '</div>';
+  }
+  go('scr-player');
+}
+
+function renderPlayerResult() {
+  const r = P.result;
+  if (!r) return;
+  playerHeader();
+  const bits = [];
+  if (r.found) bits.push('<span style="color:var(--green)">You found the truth</span>');
+  if (r.fooled) bits.push('Your lie fooled <b>' + r.fooled + '</b> ' + (r.fooled === 1 ? 'player' : 'players'));
+  if (!r.found && !r.fooled) bits.push('No points this round');
+  $('playerBody').innerHTML =
+    '<div class="center mt8">' +
+      '<div class="eyebrow">Round ' + (r.r + 1) + '</div>' +
+      '<div class="rankline" style="color:var(--gold)">+' + r.delta + '</div>' +
+      '<p class="tagline">' + bits.join(' · ') + '</p>' +
+    '</div>' +
+    '<div class="card mt20"><div class="eyebrow" style="color:var(--green)">The truth</div>' +
+      '<div class="ans-text mt8">' + esc(r.truth) + '</div></div>' +
+    '<div class="card mt12 center"><div class="eyebrow">Your score</div>' +
+      '<div class="rankline mt8">' + r.score + '</div></div>' +
+    '<p class="waitline"><span class="spin"></span>Look at the main screen for the full reveal…</p>';
+  go('scr-player');
+}
+
+function renderPlayerFinal() {
+  const f = P.final;
+  if (!f) return;
+  playerHeader();
+  $('playerBody').innerHTML =
+    '<div class="center mt20">' +
+      '<div class="eyebrow">Final results</div>' +
+      '<div class="rankline mt8">#' + f.rank + '</div>' +
+      '<div class="big-title mt8">' + (f.rank === 1 ? (f.tied ? '🤝 Joint winner!' : '🏆 You win!') : 'Good game!') + '</div>' +
+      '<p class="tagline">' + (f.rank === 1
+        ? 'Top of the room with ' + f.score + ' points.'
+        : esc(f.winner) + ' took the crown. You finished with ' + f.score + ' points.') + '</p>' +
+    '</div>' +
+    '<div class="card mt24 center"><div class="eyebrow">Your score</div>' +
+      '<div class="rankline mt8">' + f.score + '</div></div>' +
+    '<p class="waitline">Thanks for playing! You can close this page.</p>';
+  go('scr-player');
+}
+
+/* ---------- player: input ---------- */
+$('playerBody').addEventListener('submit', e => {
+  if (e.target.id !== 'plLieForm') return;
+  e.preventDefault();
+  if (P.pending) return;
+  const el = $('plLie');
+  const text = el ? el.value.trim() : '';
+  if (!text) { $('plErr').textContent = 'Type something first — make it believable!'; sfx.err(); return; }
+  P.pending = true;
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) btn.disabled = true;
+  pub(topicIn(), { t: 'lie', pid: NET.pid, text: text });
+  sfx.click();
+  setTimeout(() => {
+    if (!P.pending) return;
+    P.pending = false;
+    const b = document.querySelector('#plLieForm button[type="submit"]');
+    if (b) b.disabled = false;
+    const err = $('plErr');
+    if (err) err.textContent = 'No response from the host — try again.';
+  }, 7000);
+});
+
+$('playerBody').addEventListener('click', e => {
+  const btn = e.target.closest('.opt[data-id]');
+  if (!btn || P.pending) return;
+  P.pending = true;
+  document.querySelectorAll('#playerBody .opt').forEach(b => { b.disabled = true; });
+  btn.classList.add('picked');
+  pub(topicIn(), { t: 'vote', pid: NET.pid, choice: btn.dataset.id });
+  sfx.click();
+  setTimeout(() => {
+    if (!P.pending) return;
+    P.pending = false;
+    document.querySelectorAll('#playerBody .opt').forEach(b => { b.disabled = false; b.classList.remove('picked'); });
+  }, 7000);
+});
+
+/* ---------- host: input ---------- */
+$('hostBody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === 'beginWrite') { sfx.click(); hostBeginWrite(); }
+  else if (act === 'beginVote') { sfx.click(); hostBeginVote(); }
+  else if (act === 'reveal') { sfx.click(); hostReveal(); }
+  else if (act === 'next') { sfx.click(); hostNext(); }
+  else if (act === 'again') { sfx.click(); hostAgain(); }
+  else if (act === 'close') { sfx.click(); leaveOnline(); }
+  else if (act === 'hostVote') { hostVote(hostPlayer(), btn.dataset.id); }
+});
+
+$('hostBody').addEventListener('submit', e => {
+  if (e.target.id !== 'hbLieForm') return;
+  e.preventDefault();
+  const me = hostPlayer();
+  const text = $('hbLie').value;
+  const err = hostLie(me, text);
+  if (err) {
+    const el = $('hbLieErr');
+    if (el) el.textContent = err;
+    const inp = $('hbLie');
+    if (inp) { inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 450); inp.focus(); }
+    sfx.err();
+  } else sfx.ok();
+});
+
+/* ---------- online menu + setup wiring ---------- */
+function prepareOnlineMenu() {
+  const warn = $('netWarn');
+  if (location.protocol === 'file:') {
+    warn.hidden = false;
+    warn.innerHTML = '<b>Heads up:</b> this page is open from a local file, so friends can\'t reach it by link. Host it for free (Netlify Drop, GitHub Pages, Cloudflare Pages) and share that URL — or have everyone open the same file and type the room code.';
+  } else warn.hidden = true;
+  setNetStatus(NET.client && NET.client.connected ? 'Connected' : 'Offline');
+}
+
+function syncHostRounds(n) {
+  hostSetupRounds = n;
+  document.querySelectorAll('#hsRounds button').forEach(b => b.classList.toggle('active', +b.dataset.rounds === n));
+}
+
+function prepareHostSetup() {
+  let saved = '';
+  try { saved = localStorage.getItem('fibble.online.name') || ''; } catch (e) {}
+  $('hsName').value = saved;
+  $('hsPlaying').checked = true;
+  $('hsNameWrap').hidden = false;
+  $('hsDouble').checked = true;
+  $('hsErr').textContent = '';
+  $('hsCreate').disabled = false;
+  $('hsCreate').textContent = 'Create room';
+  syncHostRounds(8);
+}
+
+function prepareJoin() {
+  let saved = '';
+  try { saved = localStorage.getItem('fibble.online.name') || ''; } catch (e) {}
+  $('jnName').value = saved;
+  $('jnErr').textContent = '';
+  $('jnGo').disabled = false;
+  $('jnGo').textContent = 'Join room';
+  setTimeout(() => $('jnCode').focus(), 80);
+}
+
+$('btnOnline').addEventListener('click', () => { sfx.click(); prepareOnlineMenu(); go('scr-online'); });
+$('onBack').addEventListener('click', () => { sfx.click(); if (NET.role) leaveOnline(); else go('scr-menu'); });
+$('onHost').addEventListener('click', () => { sfx.click(); prepareHostSetup(); go('scr-hostsetup'); });
+$('onJoin').addEventListener('click', () => { sfx.click(); prepareJoin(); go('scr-join'); });
+$('hsBack').addEventListener('click', () => { sfx.click(); go('scr-online'); });
+$('jnBack').addEventListener('click', () => { sfx.click(); go('scr-online'); });
+
+$('hsPlaying').addEventListener('change', e => { $('hsNameWrap').hidden = !e.target.checked; sfx.click(); });
+$('hsRounds').addEventListener('click', e => {
+  const b = e.target.closest('button[data-rounds]');
+  if (!b) return;
+  syncHostRounds(+b.dataset.rounds);
+  sfx.click();
+});
+
+$('hsCreate').addEventListener('click', async () => {
+  if (NET.role) return;
+  const playing = $('hsPlaying').checked;
+  const name = ($('hsName').value.trim() || 'Host').slice(0, 16);
+  const err = $('hsErr');
+  err.textContent = '';
+  $('hsCreate').disabled = true;
+  $('hsCreate').textContent = 'Connecting…';
+  try {
+    await createRoom({ playing: playing, name: name, rounds: hostSetupRounds, doubleFinal: $('hsDouble').checked });
+    try { localStorage.setItem('fibble.online.name', name); } catch (e) {}
+    go('scr-lobby');
+    renderLobby();
+    sfx.ok();
+  } catch (e) {
+    err.textContent = e.message || 'Could not create a room.';
+    $('hsCreate').disabled = false;
+    $('hsCreate').textContent = 'Create room';
+    sfx.err();
+  }
+});
+
+$('jnCode').addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+});
+$('jnCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('jnGo').click(); });
+
+$('jnGo').addEventListener('click', async () => {
+  if (NET.role) return;
+  const code = $('jnCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const name = $('jnName').value.trim().slice(0, 16);
+  const err = $('jnErr');
+  err.textContent = '';
+  if (code.length !== 6) { err.textContent = 'Enter the 6-character room code.'; sfx.err(); return; }
+  if (!BROKERS[code[0]]) { err.textContent = 'That code does not look right.'; sfx.err(); return; }
+  if (!name) { err.textContent = 'Pick a name.'; sfx.err(); return; }
+  $('jnGo').disabled = true;
+  $('jnGo').textContent = 'Joining…';
+  try {
+    await joinRoom(code, name);
+    try { localStorage.setItem('fibble.online.name', name); } catch (e) {}
+    afterWelcome();
+    sfx.ok();
+  } catch (e) {
+    err.textContent = e.message || 'Could not join.';
+    $('jnGo').disabled = false;
+    $('jnGo').textContent = 'Join room';
+    sfx.err();
+    try { if (NET.client) NET.client.end(true); } catch (x) {}
+    resetNet();
+  }
+});
+
+$('lbStart').addEventListener('click', () => {
+  if (NET.role !== 'host') return;
+  if (O.players.length < 2) return;
+  sfx.click();
+  hostStartGame();
+});
+
+$('lbLeave').addEventListener('click', () => { sfx.click(); leaveOnline(); });
+
+$('lbCopy').addEventListener('click', async () => {
+  const url = $('lbCopy').dataset.url;
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    $('lbCopy').textContent = 'Copied ✓';
+    setTimeout(() => { $('lbCopy').textContent = 'Copy invite link'; }, 1600);
+  } catch (e) {
+    prompt('Copy this invite link:', url);
+  }
+  sfx.click();
+});
+
+/* ---------- teardown ---------- */
+function resetNet() {
+  P.joinPending = false;
+  NET.client = null;
+  NET.room = null;
+  NET.key = null;
+  NET.role = null;
+  NET.pid = null;
+  NET.name = '';
+  setNetStatus('Offline');
+}
+
+function leaveOnline() {
+  const role = NET.role;
+  const client = NET.client;
+  if (role && client) {
+    try {
+      if (role === 'player') pub(topicIn(), { t: 'bye', pid: NET.pid });
+      if (role === 'host') {
+        O.players.forEach(p => { if (p.id !== O.hostPid) toPlayer(p.id, { t: 'closed' }); });
+        if (client.connected) client.publish(topicState(), '', { retain: true });
+      }
+    } catch (e) {}
+    setTimeout(() => { try { client.end(true); } catch (e) {} }, 400);
+  }
+  resetNet();
+  P.state = null; P.prompt = null; P.result = null; P.final = null; P.waitMsg = ''; P.pending = false; P.lastRound = -1;
+  O.phase = 'lobby'; O.room = ''; O.players = []; O.deck = []; O.r = 0;
+  $('confetti').innerHTML = '';
+  go('scr-menu');
+}
+
+/* ---------- deep link: index.html#join=CODE ---------- */
+(function () {
+  const m = (location.hash || '').match(/join=([A-Za-z0-9]{6})/);
+  if (!m) return;
+  const code = m[1].toUpperCase();
+  if (!BROKERS[code[0]]) return;
+  prepareJoin();
+  $('jnCode').value = code;
+  go('scr-join');
+})();
+
+</script>
+</body>
+</html>
